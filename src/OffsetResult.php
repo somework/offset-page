@@ -40,8 +40,9 @@ class OffsetResult
     }
 
     /**
-     * @return mixed|null
      * @throws \InvalidArgumentException
+     *
+     * @return mixed|null
      */
     public function fetch()
     {
@@ -51,14 +52,15 @@ class OffsetResult
         if ($this->generator->valid()) {
             $value = $this->generator->current();
             $this->generator->next();
+
             return $value;
         }
-        return null;
     }
 
     /**
-     * @return array
      * @throws \InvalidArgumentException
+     *
+     * @return array
      */
     public function fetchAll()
     {
@@ -66,6 +68,7 @@ class OffsetResult
         while (($data = $this->fetch()) || $data !== null) {
             $result[] = $data;
         }
+
         return $result;
     }
 
@@ -78,8 +81,9 @@ class OffsetResult
     }
 
     /**
-     * @return \Generator
      * @throws \InvalidArgumentException
+     *
+     * @return \Generator
      */
     protected function execute()
     {
@@ -106,8 +110,8 @@ class OffsetResult
         if ($this->sourceResultGenerator->valid()) {
             $value = $this->sourceResultGenerator->current();
             $this->sourceResultGenerator->next();
+
             return $value;
         }
-        return null;
     }
 }

@@ -65,7 +65,6 @@ class OffsetResultTest extends TestCase
             ->setMethods(['getTotalCount', 'generator'])
             ->getMock();
 
-
         $sourceResultArray = [];
         foreach ($totalCountValues as $totalCountValue) {
             $clone = clone $sourceResult;
@@ -107,7 +106,6 @@ class OffsetResultTest extends TestCase
             ],
         ];
     }
-
 
     /**
      * @param SourceResultInterface[] $sources
