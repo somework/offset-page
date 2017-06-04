@@ -28,12 +28,12 @@ class OffsetAdapter
 
     /**
      * @param int $offset
-     *
      * @param int $limit
      * @param int $nowCount
      *
-     * @return \SomeWork\OffsetPage\OffsetResult
      * @throws \LogicException
+     *
+     * @return \SomeWork\OffsetPage\OffsetResult
      */
     public function execute($offset, $limit, $nowCount = 0)
     {
@@ -45,8 +45,9 @@ class OffsetAdapter
      * @param $limit
      * @param $nowCount
      *
-     * @return \Generator
      * @throws \LogicException
+     *
+     * @return \Generator
      */
     protected function logic($offset, $limit, $nowCount)
     {
