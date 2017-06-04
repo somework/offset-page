@@ -8,5 +8,3 @@ phpunit.phar
 
 ### Php cs fixer
 .php_cs.cache
-
-.idea
