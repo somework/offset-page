@@ -30,8 +30,9 @@ class SourceResultCallbackAdapter implements SourceResultInterface
     }
 
     /**
-     * @return \Generator
      * @throws \RuntimeException
+     *
+     * @return \Generator
      */
     public function generator()
     {
@@ -39,6 +40,7 @@ class SourceResultCallbackAdapter implements SourceResultInterface
         if (!is_object($result) || !$result instanceof \Generator) {
             throw new \RuntimeException('Callback result should return Generator');
         }
+
         return $result;
     }
 
