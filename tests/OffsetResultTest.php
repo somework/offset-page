@@ -11,7 +11,6 @@
 
 namespace SomeWork\OffsetPage\Tests;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use SomeWork\OffsetPage\OffsetResult;
 use SomeWork\OffsetPage\SourceResultInterface;
@@ -20,7 +19,7 @@ class OffsetResultTest extends TestCase
 {
     public function testNotSourceResultInterfaceGenerator()
     {
-        $this->setExpectedException(InvalidArgumentException::class);
+        $this->setExpectedException(\UnexpectedValueException::class);
         $notSourceResultGeneratorFunction = function () {
             yield 1;
         };
@@ -50,6 +49,18 @@ class OffsetResultTest extends TestCase
         $offsetResult->fetchAll();
 
         $this->assertEquals(10, $offsetResult->getTotalCount());
+    }
+
+    /**
+     * @param $value
+     *
+     * @return \Generator
+     */
+    protected function getGenerator(array $value)
+    {
+        foreach ($value as $item) {
+            yield $item;
+        }
     }
 
     /**
@@ -135,17 +146,5 @@ class OffsetResultTest extends TestCase
                 'expectedResult' => [0, 1, 2],
             ],
         ];
-    }
-
-    /**
-     * @param $value
-     *
-     * @return \Generator
-     */
-    protected function getGenerator(array $value)
-    {
-        foreach ($value as $item) {
-            yield $item;
-        }
     }
 }

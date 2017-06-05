@@ -34,7 +34,7 @@ class SourceCallbackAdapterTest extends TestCase
 
     public function testBad()
     {
-        $this->setExpectedException(\RuntimeException::class);
+        $this->setExpectedException(\UnexpectedValueException::class);
         $source = new SourceCallbackAdapter(function ($page, $size) {
             return '2';
         });

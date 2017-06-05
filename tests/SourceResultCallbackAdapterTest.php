@@ -35,7 +35,7 @@ class SourceResultCallbackAdapterTest extends TestCase
 
     public function testBad()
     {
-        $this->setExpectedException(\RuntimeException::class);
+        $this->setExpectedException(\UnexpectedValueException::class);
         $result = new SourceResultCallbackAdapter(function () {
             return 213;
         }, 0);

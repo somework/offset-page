@@ -27,7 +27,7 @@ class SourceCallbackAdapter implements SourceInterface
      * @param $page
      * @param $pageSize
      *
-     * @throws \RuntimeException
+     * @throws \UnexpectedValueException
      *
      * @return SourceResultInterface
      */
@@ -35,7 +35,7 @@ class SourceCallbackAdapter implements SourceInterface
     {
         $result = call_user_func($this->callback, $page, $pageSize);
         if (!is_object($result) || !$result instanceof SourceResultInterface) {
-            throw new \RuntimeException('Callback should return SourceResultInterface object');
+            throw new \UnexpectedValueException('Callback should return SourceResultInterface object');
         }
 
         return $result;

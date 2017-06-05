@@ -40,7 +40,7 @@ class OffsetResult
     }
 
     /**
-     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
      *
      * @return mixed|null
      */
@@ -58,7 +58,7 @@ class OffsetResult
     }
 
     /**
-     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
      *
      * @return array
      */
@@ -81,7 +81,7 @@ class OffsetResult
     }
 
     /**
-     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
      *
      * @return \Generator
      */
@@ -89,7 +89,7 @@ class OffsetResult
     {
         while ($sourceResult = $this->getSourceResult()) {
             if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
-                throw new \InvalidArgumentException(sprintf(
+                throw new \UnexpectedValueException(sprintf(
                     'Result of generator is not an instance of %s',
                     SourceResultInterface::class
                 ));
