@@ -33,7 +33,9 @@ class OffsetResult
     public function __construct(\Generator $sourceResultGenerator)
     {
         $this->generator = $this->execute($sourceResultGenerator);
-        $this->generator->current();
+        if ($this->generator->valid()) {
+            $this->generator->current();
+        }
     }
 
     /**
