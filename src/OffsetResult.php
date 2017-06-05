@@ -77,8 +77,9 @@ class OffsetResult
     /**
      * @param \Generator $generator
      *
-     * @return \Generator
      * @throws \UnexpectedValueException
+     *
+     * @return \Generator
      */
     protected function execute(\Generator $generator)
     {

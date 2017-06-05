@@ -151,7 +151,7 @@ class OffsetResultTest extends TestCase
     }
 
     /**
-     * Infinite fetch
+     * Infinite fetch.
      */
     public function testError()
     {
