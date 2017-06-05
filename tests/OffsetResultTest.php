@@ -12,7 +12,9 @@
 namespace SomeWork\OffsetPage\Tests;
 
 use PHPUnit\Framework\TestCase;
+use SomeWork\OffsetPage\OffsetAdapter;
 use SomeWork\OffsetPage\OffsetResult;
+use SomeWork\OffsetPage\SourceCallbackAdapter;
 use SomeWork\OffsetPage\SourceResultInterface;
 
 class OffsetResultTest extends TestCase
@@ -45,7 +47,7 @@ class OffsetResultTest extends TestCase
             ->willReturn($this->getGenerator(['test']));
 
         $offsetResult = new OffsetResult($this->getGenerator([$sourceResult]));
-        $this->assertEquals(0, $offsetResult->getTotalCount());
+        $this->assertEquals(10, $offsetResult->getTotalCount());
         $offsetResult->fetchAll();
 
         $this->assertEquals(10, $offsetResult->getTotalCount());
@@ -146,5 +148,21 @@ class OffsetResultTest extends TestCase
                 'expectedResult' => [0, 1, 2],
             ],
         ];
+    }
+
+    /**
+     * Infinite fetch.
+     */
+    public function testError()
+    {
+        $callback = function () {
+            return new ArraySourceResult([1], 1);
+        };
+
+        $offsetAdapter = new OffsetAdapter(new SourceCallbackAdapter($callback));
+        $result = $offsetAdapter->execute(0, 0);
+
+        $this->assertEquals(1, $result->getTotalCount());
+        $this->assertEquals([1], $result->fetchAll());
     }
 }

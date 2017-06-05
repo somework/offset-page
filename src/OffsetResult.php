@@ -14,11 +14,6 @@ namespace SomeWork\OffsetPage;
 class OffsetResult
 {
     /**
-     * @var \Generator
-     */
-    protected $sourceResultGenerator;
-
-    /**
      * @var int
      */
     protected $totalCount = 0;
@@ -32,11 +27,13 @@ class OffsetResult
      * OffsetResult constructor.
      *
      * @param \Generator $sourceResultGenerator
+     *
+     * @throws \UnexpectedValueException
      */
     public function __construct(\Generator $sourceResultGenerator)
     {
-        $this->totalCount = 0;
-        $this->sourceResultGenerator = $sourceResultGenerator;
+        $this->generator = $this->execute($sourceResultGenerator);
+        $this->generator->current();
     }
 
     /**
@@ -46,9 +43,6 @@ class OffsetResult
      */
     public function fetch()
     {
-        if (!$this->generator) {
-            $this->generator = $this->execute();
-        }
         if ($this->generator->valid()) {
             $value = $this->generator->current();
             $this->generator->next();
@@ -81,19 +75,22 @@ class OffsetResult
     }
 
     /**
+     * @param \Generator $generator
+     *
      * @throws \UnexpectedValueException
      *
      * @return \Generator
      */
-    protected function execute()
+    protected function execute(\Generator $generator)
     {
-        while ($sourceResult = $this->getSourceResult()) {
+        foreach ($generator as $sourceResult) {
             if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
                 throw new \UnexpectedValueException(sprintf(
                     'Result of generator is not an instance of %s',
                     SourceResultInterface::class
                 ));
             }
+
             $sourceCount = $sourceResult->getTotalCount();
             if ($sourceCount > $this->totalCount) {
                 $this->totalCount = $sourceCount;
@@ -102,16 +99,6 @@ class OffsetResult
             foreach ($sourceResult->generator() as $result) {
                 yield $result;
             }
-        }
-    }
-
-    protected function getSourceResult()
-    {
-        if ($this->sourceResultGenerator->valid()) {
-            $value = $this->sourceResultGenerator->current();
-            $this->sourceResultGenerator->next();
-
-            return $value;
         }
     }
 }
