@@ -54,6 +54,9 @@ class OffsetAdapter
         try {
             while ($offsetResult = Offset::logic($offset, $limit, $nowCount)) {
                 $result = $this->source->execute($offsetResult->getPage(), $offsetResult->getSize());
+                if ($result->getTotalCount() === 0) {
+                    return;
+                }
                 $nowCount += $result->getTotalCount();
                 yield $result;
             }
