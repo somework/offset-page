@@ -26,29 +26,9 @@ class OffsetResult
      */
     public function __construct(\Generator $sourceResultGenerator)
     {
-        // Collect all source results and calculate total count
-        $sourceResults = [];
-        foreach ($sourceResultGenerator as $sourceResult) {
-            if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
-                throw new \UnexpectedValueException(sprintf(
-                    'Result of generator is not an instance of %s',
-                    SourceResultInterface::class,
-                ));
-            }
-
-            $sourceResults[] = $sourceResult;
-
-            $sourceCount = $sourceResult->getTotalCount();
-            if ($sourceCount > $this->totalCount) {
-                $this->totalCount = $sourceCount;
-            }
-        }
-
-        // Create generator from collected sources
-        $this->generator = $this->executeFromSources($sourceResults);
-        // Prime the generator to ensure it's in the correct state
+        $this->generator = $this->execute($sourceResultGenerator);
         if ($this->generator->valid()) {
-            // Don't advance, just ensure the generator is started
+            $this->generator->current();
         }
     }
 
@@ -69,13 +49,14 @@ class OffsetResult
 
     /**
      * @return array<T>
+     *
+     * @throws \UnexpectedValueException
      */
     public function fetchAll(): array
     {
         $result = [];
-        while ($this->generator->valid()) {
-            $result[] = $this->generator->current();
-            $this->generator->next();
+        while (null !== ($data = $this->fetch())) {
+            $result[] = $data;
         }
 
         return $result;
@@ -87,11 +68,21 @@ class OffsetResult
     }
 
     /**
-     * @param SourceResultInterface<T>[] $sourceResults
+     * @throws \UnexpectedValueException
      */
-    private function executeFromSources(array $sourceResults): \Generator
+    protected function execute(\Generator $generator): \Generator
     {
-        foreach ($sourceResults as $sourceResult) {
+        foreach ($generator as $sourceResult) {
+            if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
+                throw new \UnexpectedValueException(sprintf(
+                    'Result of generator is not an instance of %s',
+                    SourceResultInterface::class,
+                ));
+            }
+
+            $sourceCount = $sourceResult->getResultCount();
+            $this->totalCount += $sourceCount;
+
             foreach ($sourceResult->generator() as $result) {
                 yield $result;
             }

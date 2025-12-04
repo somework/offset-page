@@ -23,7 +23,7 @@ class SourceCallbackAdapterTest extends TestCase
         });
 
         $result = $source->execute(0, 0);
-        $this->assertEquals(5, $result->getTotalCount());
+        $this->assertEquals(5, $result->getResultCount());
 
         $data = [];
         foreach ($result->generator() as $item) {
@@ -55,7 +55,7 @@ class SourceCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals(['page5_size20'], $data);
-        $this->assertEquals(1, $result->getTotalCount());
+        $this->assertEquals(1, $result->getResultCount());
     }
 
     public function testExecuteWithZeroPageAndSize(): void
@@ -182,7 +182,7 @@ class SourceCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals(['page2_item1', 'page2_item2', 'page2_item3'], $data);
-        $this->assertEquals(100, $result->getTotalCount());
+        $this->assertEquals(100, $result->getResultCount());
         $this->assertEquals(1, $callCount);
     }
 
@@ -199,7 +199,7 @@ class SourceCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals([], $data);
-        $this->assertEquals(0, $result->getTotalCount());
+        $this->assertEquals(0, $result->getResultCount());
     }
 
     public function testMultipleExecuteCalls(): void

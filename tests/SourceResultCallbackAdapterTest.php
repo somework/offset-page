@@ -48,7 +48,7 @@ class SourceResultCallbackAdapterTest extends TestCase
             yield 'item';
         }, 42);
 
-        $this->assertEquals(42, $result->getTotalCount());
+        $this->assertEquals(42, $result->getResultCount());
     }
 
     public function testGeneratorWithVariousDataTypes(): void
@@ -66,7 +66,7 @@ class SourceResultCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals($data, $generated);
-        $this->assertEquals(count($data), $result->getTotalCount());
+        $this->assertEquals(count($data), $result->getResultCount());
     }
 
     public function testGeneratorWithLargeDataset(): void
@@ -78,7 +78,7 @@ class SourceResultCallbackAdapterTest extends TestCase
             }
         }, count($largeData));
 
-        $this->assertEquals(count($largeData), $result->getTotalCount());
+        $this->assertEquals(count($largeData), $result->getResultCount());
 
         $count = 0;
         foreach ($result->generator() as $item) {
@@ -97,7 +97,7 @@ class SourceResultCallbackAdapterTest extends TestCase
             }
         }, 0);
 
-        $this->assertEquals(0, $result->getTotalCount());
+        $this->assertEquals(0, $result->getResultCount());
 
         $generated = [];
         foreach ($result->generator() as $item) {
@@ -112,7 +112,7 @@ class SourceResultCallbackAdapterTest extends TestCase
             yield 'item';
         }, -5);
 
-        $this->assertEquals(-5, $result->getTotalCount());
+        $this->assertEquals(-5, $result->getResultCount());
 
         $generated = [];
         foreach ($result->generator() as $item) {
@@ -155,7 +155,7 @@ class SourceResultCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals($expected, $generated);
-        $this->assertEquals(10, $result->getTotalCount());
+        $this->assertEquals(10, $result->getResultCount());
     }
 
     public function testGeneratorMultipleIterations(): void
@@ -198,7 +198,7 @@ class SourceResultCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals(['first', 'second'], $generated);
-        $this->assertEquals(4, $result->getTotalCount());
+        $this->assertEquals(4, $result->getResultCount());
     }
 
     public function testGeneratorMemoryEfficiency(): void
@@ -245,6 +245,6 @@ class SourceResultCallbackAdapterTest extends TestCase
         }
 
         $this->assertEquals($nestedData, $generated);
-        $this->assertEquals(2, $result->getTotalCount());
+        $this->assertEquals(2, $result->getResultCount());
     }
 }

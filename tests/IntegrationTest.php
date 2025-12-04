@@ -100,7 +100,7 @@ class IntegrationTest extends TestCase
         $result = $adapter->execute(100, 10);
 
         $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(50, $result->getTotalCount()); // Total count should still be correct
+        $this->assertEquals(0, $result->getTotalCount()); // Page count for empty results
     }
 
     public function testPartialPageRequests(): void
@@ -115,7 +115,7 @@ class IntegrationTest extends TestCase
         $records = $result->fetchAll();
 
         $this->assertEquals([11, 12, 13, 14, 15], $records);
-        $this->assertEquals(25, $result->getTotalCount());
+        $this->assertEquals(5, $result->getTotalCount());
     }
 
     public function testLargeOffsetWithSmallLimit(): void
@@ -130,7 +130,7 @@ class IntegrationTest extends TestCase
         $records = $result->fetchAll();
 
         $this->assertEquals([1000], $records);
-        $this->assertEquals(1000, $result->getTotalCount());
+        $this->assertEquals(1, $result->getTotalCount());
     }
 
     public function testApiFailureSimulation(): void
@@ -252,57 +252,66 @@ class IntegrationTest extends TestCase
         return [
             'empty_dataset' => [
                 [],
-                0, 10,
+                0,
+                10,
                 [],
                 0,
             ],
             'single_item_dataset' => [
                 ['item1'],
-                0, 10,
+                0,
+                10,
                 ['item1'],
                 1,
             ],
             'exact_page_size' => [
                 range(1, 10),
-                0, 10,
+                0,
+                10,
                 range(1, 10),
                 10,
             ],
             'partial_last_page' => [
                 range(1, 25),
-                20, 10,
+                20,
+                10,
                 range(21, 25),
-                25,
+                5,
             ],
             'offset_at_end' => [
                 range(1, 10),
-                10, 5,
-                [],
                 10,
+                5,
+                [],
+                0,
             ],
             'offset_beyond_end' => [
                 range(1, 5),
-                10, 5,
-                [],
+                10,
                 5,
+                [],
+                0,
             ],
             'zero_limit' => [
                 range(1, 10),
-                0, 0,
+                0,
+                0,
                 [],
-                10,
+                0,
             ],
             'large_limit' => [
                 range(1, 50),
-                0, 100,
+                0,
+                100,
                 range(1, 50),
                 50,
             ],
             'mixed_data_types' => [
                 [1, 'string', 3.14, true, null],
-                0, 3,
+                0,
+                3,
                 [1, 'string', 3.14],
-                5,
+                3,
             ],
         ];
     }
@@ -466,7 +475,7 @@ class IntegrationTest extends TestCase
 
             $this->assertIsArray($data);
             $this->assertLessThanOrEqual($limit, count($data));
-            $this->assertEquals(1000, $result->getTotalCount());
+            $this->assertEquals(count($data), $result->getTotalCount());
 
             // Verify data is in expected range
             if (!empty($data)) {

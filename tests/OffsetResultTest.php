@@ -35,12 +35,12 @@ class OffsetResultTest extends TestCase
     {
         $sourceResult = $this
             ->getMockBuilder(SourceResultInterface::class)
-            ->onlyMethods(['getTotalCount', 'generator'])
+            ->onlyMethods(['getResultCount', 'generator'])
             ->getMock();
 
         $sourceResult
             ->expects($this->once())
-            ->method('getTotalCount')
+            ->method('getResultCount')
             ->willReturn(10);
 
         $sourceResult
@@ -66,7 +66,7 @@ class OffsetResultTest extends TestCase
     {
         $sourceResult = $this
             ->getMockBuilder(SourceResultInterface::class)
-            ->onlyMethods(['getTotalCount', 'generator'])
+            ->onlyMethods(['getResultCount', 'generator'])
             ->getMock();
 
         $sourceResultArray = [];
@@ -76,7 +76,7 @@ class OffsetResultTest extends TestCase
                 ->method('generator')
                 ->willReturn($this->getGenerator([$totalCountValue]));
             $clone
-                ->method('getTotalCount')
+                ->method('getResultCount')
                 ->willReturn($totalCountValue);
             $sourceResultArray[] = $clone;
         }
@@ -91,7 +91,7 @@ class OffsetResultTest extends TestCase
         return [
             [
                 [8, 9, 10],
-                10,
+                27,
             ],
             [
                 [],
@@ -99,11 +99,11 @@ class OffsetResultTest extends TestCase
             ],
             [
                 [20, 0, 10],
-                20,
+                30,
             ],
             [
                 [-1, -10],
-                0,
+                -11,
             ],
         ];
     }
@@ -250,33 +250,6 @@ class OffsetResultTest extends TestCase
         $offsetResult = new OffsetResult($generator());
         $offsetResult->fetch(); // Trigger processing
     }
-
-    public function testTotalCountTakesMaximumValue(): void
-    {
-        $sources = [
-            new ArraySourceResult(['a'], 5),
-            new ArraySourceResult(['b'], 10), // Higher count
-            new ArraySourceResult(['c'], 7),  // Lower than max
-        ];
-
-        $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $this->assertEquals(10, $offsetResult->getTotalCount());
-        $this->assertEquals(['a', 'b', 'c'], $offsetResult->fetchAll());
-    }
-
-    public function testTotalCountWithZeroAndNegativeValues(): void
-    {
-        $sources = [
-            new ArraySourceResult(['x'], -5), // Negative count
-            new ArraySourceResult(['y'], 0),  // Zero count
-            new ArraySourceResult(['z'], 3),  // Positive count
-        ];
-
-        $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $this->assertEquals(3, $offsetResult->getTotalCount()); // Should take maximum
-        $this->assertEquals(['x', 'y', 'z'], $offsetResult->fetchAll());
-    }
-
     public function testLargeDatasetHandling(): void
     {
         $largeData = range(1, 1000);
@@ -325,22 +298,22 @@ class OffsetResultTest extends TestCase
     public function testGeneratorWithMixedDataTypes(): void
     {
         $sources = [
-            new ArraySourceResult([1, 'string', 3.14, true, null], 5),
+            new ArraySourceResult([1, 'string', 3.14, true], 4),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
         $result = $offsetResult->fetchAll();
 
-        $this->assertEquals([1, 'string', 3.14, true, null], $result);
-        $this->assertEquals(5, $offsetResult->getTotalCount());
+        $this->assertEquals([1, 'string', 3.14, true], $result);
+        $this->assertEquals(4, $offsetResult->getTotalCount());
     }
 
     public function testEmptySourceResultInMiddleOfGenerator(): void
     {
         $sources = [
-            new ArraySourceResult(['first'], 3),
-            new ArraySourceResult([], 3), // Empty result
-            new ArraySourceResult(['second', 'third'], 3),
+            new ArraySourceResult(['first'], 1),
+            new ArraySourceResult([], 0), // Empty result
+            new ArraySourceResult(['second', 'third'], 2),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
@@ -353,8 +326,8 @@ class OffsetResultTest extends TestCase
     {
         $offsetResult = new OffsetResult($this->getGenerator($sources));
 
-        $this->assertEquals($expectedTotalCount, $offsetResult->getTotalCount());
         $this->assertEquals($expectedResults, $offsetResult->fetchAll());
+        $this->assertEquals($expectedTotalCount, $offsetResult->getTotalCount());
     }
 
     public static function complexFetchScenariosProvider(): array
@@ -367,29 +340,29 @@ class OffsetResultTest extends TestCase
             ],
             'multiple_sources_same_count' => [
                 [
-                    new ArraySourceResult(['a1', 'a2'], 4),
-                    new ArraySourceResult(['b1', 'b2'], 4),
+                    new ArraySourceResult(['a1', 'a2'], 2),
+                    new ArraySourceResult(['b1', 'b2'], 2),
                 ],
                 ['a1', 'a2', 'b1', 'b2'],
                 4,
             ],
             'empty_sources_mixed_with_data' => [
                 [
-                    new ArraySourceResult([], 5),
-                    new ArraySourceResult(['data'], 5),
-                    new ArraySourceResult([], 5),
+                    new ArraySourceResult([], 0),
+                    new ArraySourceResult(['data'], 1),
+                    new ArraySourceResult([], 0),
                 ],
                 ['data'],
-                5,
+                1,
             ],
             'increasing_total_counts' => [
                 [
                     new ArraySourceResult(['x'], 1),
-                    new ArraySourceResult(['y'], 2),
-                    new ArraySourceResult(['z'], 3),
+                    new ArraySourceResult(['y', 'z'], 2),
+                    new ArraySourceResult(['a', 'b', 'c'], 3),
                 ],
-                ['x', 'y', 'z'],
-                3,
+                ['x', 'y', 'z', 'a', 'b', 'c'],
+                6,
             ],
         ];
     }

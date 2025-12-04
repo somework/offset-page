@@ -46,7 +46,7 @@ class SourceResultCallbackAdapter implements SourceResultInterface
         return $result;
     }
 
-    public function getTotalCount(): int
+    public function getResultCount(): int
     {
         return $this->totalCount;
     }

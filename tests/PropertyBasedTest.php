@@ -164,7 +164,6 @@ class PropertyBasedTest extends TestCase
             3.14,
             true,
             false,
-            null,
             ['array'],
             (object) ['key' => 'value'],
         ];

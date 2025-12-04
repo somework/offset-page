@@ -73,9 +73,9 @@ class OffsetAdapterTest extends TestCase
         $adapter = new OffsetAdapter($source);
         $result = $adapter->execute(3, 5); // The actual behavior depends on the logic library
 
-        // Based on observed behavior, offset=3, limit=5 returns [4, 5, 6]
-        $this->assertEquals([4, 5, 6], $result->fetchAll());
-        $this->assertEquals(10, $result->getTotalCount());
+        // Based on observed behavior, offset=3, limit=5 returns [4, 5, 6, 7, 8]
+        $this->assertEquals([4, 5, 6, 7, 8], $result->fetchAll());
+        $this->assertEquals(5, $result->getTotalCount());
     }
 
     public function testExecuteWithLargeOffset(): void
@@ -87,7 +87,7 @@ class OffsetAdapterTest extends TestCase
         $result = $adapter->execute(8, 5); // Should get last 2 items
 
         $this->assertEquals([9, 10], $result->fetchAll());
-        $this->assertEquals(10, $result->getTotalCount());
+        $this->assertEquals(2, $result->getTotalCount());
     }
 
     public function testExecuteWithOffsetBeyondData(): void
@@ -99,7 +99,7 @@ class OffsetAdapterTest extends TestCase
         $result = $adapter->execute(10, 5); // Offset beyond available data
 
         $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(5, $result->getTotalCount());
+        $this->assertEquals(0, $result->getTotalCount());
     }
 
     public function testExecuteWithZeroLimit(): void
@@ -111,7 +111,7 @@ class OffsetAdapterTest extends TestCase
         $result = $adapter->execute(0, 0);
 
         $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(10, $result->getTotalCount());
+        $this->assertEquals(0, $result->getTotalCount());
     }
 
     public function testExecuteWithCallbackSource(): void
@@ -157,7 +157,7 @@ class OffsetAdapterTest extends TestCase
         $result = $adapter->execute($offset, $limit);
 
         $this->assertEquals($expected, $result->fetchAll());
-        $this->assertEquals(count($data), $result->getTotalCount());
+        $this->assertEquals(count($expected), $result->getTotalCount());
     }
 
     public static function paginationScenariosProvider(): array
@@ -165,8 +165,8 @@ class OffsetAdapterTest extends TestCase
         // Based on observed behavior from testing
         return [
             'first_page'      => [range(1, 20), 0, 10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]],
-            'offset_three'    => [range(1, 20), 3, 10, [4, 5, 6]], // Based on actual behavior
-            'offset_near_end' => [range(1, 10), 8, 5, [9, 10]], // Based on actual behavior
+            'offset_three'    => [range(1, 20), 3, 10, [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]],
+            'offset_near_end' => [range(1, 10), 8, 5, [9, 10]],
             'empty_result'    => [range(1, 5), 10, 5, []], // Offset beyond data
         ];
     }
@@ -182,13 +182,13 @@ class OffsetAdapterTest extends TestCase
         $result1 = $adapter->execute(0, 3, 0);
         $fetched1 = $result1->fetchAll();
         $this->assertIsArray($fetched1);
-        $this->assertEquals(5, $result1->getTotalCount());
+        $this->assertEquals(3, $result1->getTotalCount());
 
         // Test with nowCount = 1 (should still work)
         $result2 = $adapter->execute(0, 3, 1);
         $fetched2 = $result2->fetchAll();
-        $this->assertIsArray($fetched2);
-        $this->assertEquals(5, $result2->getTotalCount());
+        $this->assertSame(['b', 'c'], $fetched2);
+        $this->assertEquals(2, $result2->getTotalCount());
 
         // Test optional parameter (defaults to 0)
         $result3 = $adapter->execute(0, 3); // No nowCount parameter
@@ -208,7 +208,7 @@ class OffsetAdapterTest extends TestCase
         $page1 = $result1->fetchAll();
         $this->assertIsArray($page1);
         $this->assertLessThanOrEqual(20, count($page1));
-        $this->assertEquals(1000, $result1->getTotalCount());
+        $this->assertEquals(count($page1), $result1->getTotalCount());
         if (!empty($page1)) {
             $this->assertGreaterThanOrEqual(1, $page1[0]); // Should contain positive integers
         }
@@ -218,7 +218,7 @@ class OffsetAdapterTest extends TestCase
         $page2 = $result2->fetchAll();
         $this->assertIsArray($page2);
         $this->assertLessThanOrEqual(20, count($page2));
-        $this->assertEquals(1000, $result2->getTotalCount());
+        $this->assertEquals(count($page2), $result2->getTotalCount());
 
         // Pages should be different (no overlap in typical pagination)
         if (!empty($page1) && !empty($page2)) {
@@ -230,13 +230,13 @@ class OffsetAdapterTest extends TestCase
         $page3 = $result3->fetchAll();
         $this->assertIsArray($page3);
         $this->assertLessThanOrEqual(50, count($page3));
-        $this->assertEquals(1000, $result3->getTotalCount());
+        $this->assertEquals(count($page3), $result3->getTotalCount());
 
         // Test offset beyond dataset
         $result4 = $adapter->execute(2000, 10); // Way beyond end
         $page4 = $result4->fetchAll();
         $this->assertIsArray($page4);
-        $this->assertEquals(1000, $result4->getTotalCount());
+        $this->assertEquals(count($page4), $result4->getTotalCount());
         // Should return empty or partial results, but not crash
     }
 
@@ -252,7 +252,7 @@ class OffsetAdapterTest extends TestCase
         for ($i = 0; $i < 3; $i++) {
             $result = $adapter->execute(40, 10); // Same request each time
             $results[] = $result->fetchAll();
-            $this->assertEquals(200, $result->getTotalCount());
+            $this->assertEquals(count($results[0]), $result->getTotalCount());
         }
 
         // All results should be identical
@@ -274,7 +274,7 @@ class OffsetAdapterTest extends TestCase
 
             $this->assertIsArray($data);
             $this->assertLessThanOrEqual($limit, count($data));
-            $this->assertEquals(100, $result->getTotalCount());
+            $this->assertEquals(count($data), $result->getTotalCount());
 
             // Data should start from beginning
             if (!empty($data)) {
