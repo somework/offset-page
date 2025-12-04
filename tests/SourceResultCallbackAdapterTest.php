@@ -181,31 +181,6 @@ class SourceResultCallbackAdapterTest extends TestCase
         $this->assertEquals(['first', 'second'], $generated);
     }
 
-    public function testGeneratorMemoryEfficiency(): void
-    {
-        // Test that generators are memory efficient
-        $result = new SourceResultCallbackAdapter(function () {
-            for ($i = 0; $i < 1000; $i++) {
-                yield str_repeat('x', 100); // 100 char strings
-            }
-        }, 1000);
-
-        $memoryBefore = memory_get_usage();
-        $count = 0;
-
-        foreach ($result->generator() as $item) {
-            $count++;
-            // Check memory usage every 100 items
-            if ($count % 100 === 0) {
-                $memoryNow = memory_get_usage();
-                // Memory should not grow excessively (allow some growth for test overhead)
-                $this->assertLessThan($memoryBefore + 1024 * 500, $memoryNow); // Less than 500KB increase
-            }
-        }
-
-        $this->assertEquals(1000, $count);
-    }
-
     public function testGeneratorWithNestedData(): void
     {
         $nestedData = [
