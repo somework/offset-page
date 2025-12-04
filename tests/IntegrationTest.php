@@ -67,7 +67,7 @@ class IntegrationTest extends TestCase
 
             $pageData = [];
             for ($i = $startIndex; $i < $endIndex; $i++) {
-                $pageData[] = 'record_' . ($i + 1);
+                $pageData[] = 'record_'.($i + 1);
             }
 
             return new ArraySourceResult($pageData, $totalRecords);
@@ -141,6 +141,7 @@ class IntegrationTest extends TestCase
             if ($callCount === 2) {
                 throw new \RuntimeException('API temporarily unavailable');
             }
+
             return new ArraySourceResult(['success'], 1);
         });
 
@@ -161,7 +162,7 @@ class IntegrationTest extends TestCase
         // Create a large dataset
         $largeData = [];
         for ($i = 0; $i < 10000; $i++) {
-            $largeData[] = 'item_' . $i;
+            $largeData[] = 'item_'.$i;
         }
 
         $source = new ArraySource($largeData);
@@ -207,6 +208,7 @@ class IntegrationTest extends TestCase
             $endIndex = min($startIndex + $size, count($sharedData));
 
             $pageData = array_slice($sharedData, $startIndex, $size);
+
             return new ArraySourceResult($pageData, count($sharedData));
         });
 
@@ -340,6 +342,7 @@ class IntegrationTest extends TestCase
             if ($failureCount <= 2) {
                 throw new \RuntimeException("Temporary failure #{$failureCount}");
             }
+
             return new ArraySourceResult(['success'], 1);
         });
 
@@ -370,6 +373,7 @@ class IntegrationTest extends TestCase
         // Test nowCount with SourceCallbackAdapter
         $source = new SourceCallbackAdapter(function (int $page, int $size) {
             $data = array_fill(0, min($size, 5), "item_$page");
+
             return new ArraySourceResult($data, 50);
         });
 
@@ -403,7 +407,7 @@ class IntegrationTest extends TestCase
             $endIndex = min($startIndex + $size, $totalItems);
             $pageData = [];
             for ($i = $startIndex; $i < $endIndex; $i++) {
-                $pageData[] = 'record_' . ($i + 1);
+                $pageData[] = 'record_'.($i + 1);
             }
 
             return new ArraySourceResult($pageData, $totalItems);

@@ -104,13 +104,14 @@ class PropertyBasedTest extends TestCase
             });
 
             $exceptionThrown = false;
+
             try {
                 $source->execute(1, 1);
             } catch (\UnexpectedValueException) {
                 $exceptionThrown = true;
             }
 
-            $this->assertTrue($exceptionThrown, 'Expected exception for invalid return: ' . gettype($invalidReturn));
+            $this->assertTrue($exceptionThrown, 'Expected exception for invalid return: '.gettype($invalidReturn));
         }
     }
 
@@ -131,8 +132,8 @@ class PropertyBasedTest extends TestCase
 
         // Add some specific edge cases
         $testCases = array_merge($testCases, [
-            'empty' => [[]],
-            'single' => [['item']],
+            'empty'    => [[]],
+            'single'   => [['item']],
             'multiple' => [range(1, 10)],
         ]);
 
