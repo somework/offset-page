@@ -13,45 +13,27 @@ namespace SomeWork\OffsetPage\Tests;
 
 use SomeWork\OffsetPage\SourceResultInterface;
 
+/**
+ * @template T
+ *
+ * @implements SourceResultInterface<T>
+ */
 class ArraySourceResult implements SourceResultInterface
 {
     /**
-     * @var array
+     * @param array<T> $data
      */
-    protected $data;
-
-    /**
-     * @var int
-     */
-    protected $totalCount;
-
-    /**
-     * ArraySourceResult constructor.
-     *
-     * @param array $data
-     * @param int   $totalCount
-     */
-    public function __construct(array $data, $totalCount)
+    public function __construct(protected array $data)
     {
-        $this->data = $data;
-        $this->totalCount = (int) $totalCount;
     }
 
     /**
-     * @return \Generator
+     * @return \Generator<T>
      */
-    public function generator()
+    public function generator(): \Generator
     {
         foreach ($this->data as $item) {
             yield $item;
         }
-    }
-
-    /**
-     * @return int
-     */
-    public function getTotalCount()
-    {
-        return $this->totalCount;
     }
 }

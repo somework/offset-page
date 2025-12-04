@@ -5,6 +5,11 @@ composer.lock
 
 ### PhpUnit
 phpunit.phar
+.phpunit.result.cache
 
 ### Php cs fixer
 .php_cs.cache
+.php-cs-fixer.cache
+
+### Tooling cache
+var/

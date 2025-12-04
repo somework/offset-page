@@ -14,34 +14,33 @@ namespace SomeWork\OffsetPage\Tests;
 use SomeWork\OffsetPage\SourceInterface;
 use SomeWork\OffsetPage\SourceResultInterface;
 
+/**
+ * @template T
+ *
+ * @implements SourceInterface<T>
+ */
 class ArraySource implements SourceInterface
 {
     /**
-     * @var array
+     * @param array<T> $data
      */
-    protected $data;
-
-    /**
-     * ArraySource constructor.
-     *
-     * @param array $data
-     */
-    public function __construct(array $data)
+    public function __construct(protected array $data)
     {
-        $this->data = $data;
     }
 
     /**
-     * @param $page
-     * @param $pageSize
-     *
-     * @return SourceResultInterface
+     * @return SourceResultInterface<T>
      */
-    public function execute($page, $pageSize)
+    public function execute(int $page, int $pageSize): SourceResultInterface
     {
+        $page = max(1, $page);
+
+        $data = $pageSize > 0 ?
+            array_slice($this->data, ($page - 1) * $pageSize, $pageSize) :
+            [];
+
         return new ArraySourceResult(
-            array_slice($this->data, ($page - 1) * $pageSize, $pageSize),
-            count($this->data)
+            $data,
         );
     }
 }

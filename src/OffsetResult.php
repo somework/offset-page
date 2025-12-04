@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the SomeWork/OffsetPage package.
  *
@@ -11,39 +13,26 @@
 
 namespace SomeWork\OffsetPage;
 
+/**
+ * @template T
+ */
 class OffsetResult
 {
-    /**
-     * @var int
-     */
-    protected $totalCount = 0;
+    private int $totalCount = 0;
+    private \Generator $generator;
 
     /**
-     * @var \Generator
-     */
-    protected $generator;
-
-    /**
-     * OffsetResult constructor.
-     *
-     * @param \Generator $sourceResultGenerator
-     *
-     * @throws \UnexpectedValueException
+     * @param \Generator<SourceResultInterface<T>> $sourceResultGenerator
      */
     public function __construct(\Generator $sourceResultGenerator)
     {
         $this->generator = $this->execute($sourceResultGenerator);
-        if ($this->generator->valid()) {
-            $this->generator->current();
-        }
     }
 
     /**
-     * @throws \UnexpectedValueException
-     *
-     * @return mixed|null
+     * @return T|null
      */
-    public function fetch()
+    public function fetch(): mixed
     {
         if ($this->generator->valid()) {
             $value = $this->generator->current();
@@ -51,54 +40,47 @@ class OffsetResult
 
             return $value;
         }
+
+        return null; // End of data
     }
 
     /**
      * @throws \UnexpectedValueException
      *
-     * @return array
+     * @return array<T>
      */
-    public function fetchAll()
+    public function fetchAll(): array
     {
         $result = [];
-        while (($data = $this->fetch()) || $data !== null) {
-            $result[] = $data;
+        while ($this->generator->valid()) {
+            $value = $this->generator->current();
+            $this->generator->next();
+            $result[] = $value;
         }
 
         return $result;
     }
 
-    /**
-     * @return int
-     */
-    public function getTotalCount()
+    public function getTotalCount(): int
     {
         return $this->totalCount;
     }
 
     /**
-     * @param \Generator $generator
-     *
      * @throws \UnexpectedValueException
-     *
-     * @return \Generator
      */
-    protected function execute(\Generator $generator)
+    protected function execute(\Generator $generator): \Generator
     {
         foreach ($generator as $sourceResult) {
             if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
                 throw new \UnexpectedValueException(sprintf(
                     'Result of generator is not an instance of %s',
-                    SourceResultInterface::class
+                    SourceResultInterface::class,
                 ));
             }
 
-            $sourceCount = $sourceResult->getTotalCount();
-            if ($sourceCount > $this->totalCount) {
-                $this->totalCount = $sourceCount;
-            }
-
             foreach ($sourceResult->generator() as $result) {
+                $this->totalCount++;
                 yield $result;
             }
         }

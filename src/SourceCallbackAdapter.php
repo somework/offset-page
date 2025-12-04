@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the SomeWork/OffsetPage package.
  *
@@ -11,27 +13,30 @@
 
 namespace SomeWork\OffsetPage;
 
+/**
+ * @template T
+ *
+ * @implements SourceInterface<T>
+ */
 class SourceCallbackAdapter implements SourceInterface
 {
     /**
      * @var callable
      */
-    protected $callback;
+    private $callback;
 
+    /**
+     * @param callable(int, int): SourceResultInterface<T> $callback
+     */
     public function __construct(callable $callback)
     {
         $this->callback = $callback;
     }
 
     /**
-     * @param $page
-     * @param $pageSize
-     *
-     * @throws \UnexpectedValueException
-     *
-     * @return SourceResultInterface
+     * @return SourceResultInterface<T>
      */
-    public function execute($page, $pageSize)
+    public function execute(int $page, int $pageSize): SourceResultInterface
     {
         $result = call_user_func($this->callback, $page, $pageSize);
         if (!is_object($result) || !$result instanceof SourceResultInterface) {

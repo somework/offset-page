@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the SomeWork/OffsetPage package.
  *
@@ -14,53 +16,55 @@ namespace SomeWork\OffsetPage;
 use SomeWork\OffsetPage\Logic\AlreadyGetNeededCountException;
 use SomeWork\OffsetPage\Logic\Offset;
 
+/**
+ * @template T
+ */
 class OffsetAdapter
 {
     /**
-     * @var SourceInterface
+     * @param SourceInterface<T> $source
      */
-    protected $source;
-
-    public function __construct(SourceInterface $source)
+    public function __construct(protected SourceInterface $source)
     {
-        $this->source = $source;
     }
 
     /**
-     * @param int $offset
-     * @param int $limit
-     * @param int $nowCount
+     * Execute pagination request with offset and limit.
      *
-     * @throws \LogicException
+     * @param int $offset   Starting position (0-based)
+     * @param int $limit    Maximum number of items to return
+     * @param int $nowCount Current count of items already fetched (used for progress tracking in multi-request scenarios)
      *
-     * @return \SomeWork\OffsetPage\OffsetResult
+     * @return OffsetResult<T>
      */
-    public function execute($offset, $limit, $nowCount = 0)
+    public function execute(int $offset, int $limit, int $nowCount = 0): OffsetResult
     {
         return new OffsetResult($this->logic($offset, $limit, $nowCount));
     }
 
     /**
-     * @param $offset
-     * @param $limit
-     * @param $nowCount
-     *
-     * @throws \LogicException
-     *
-     * @return \Generator
+     * @return \Generator<SourceResultInterface<T>>
      */
-    protected function logic($offset, $limit, $nowCount)
+    protected function logic(int $offset, int $limit, int $nowCount): \Generator
     {
         try {
             while ($offsetResult = Offset::logic($offset, $limit, $nowCount)) {
-                $result = $this->source->execute($offsetResult->getPage(), $offsetResult->getSize());
-                if ($result->getTotalCount() === 0) {
+                $generator = $this->source->execute($offsetResult->getPage(), $offsetResult->getSize())->generator();
+
+                if (!$generator->valid()) {
                     return;
                 }
-                $nowCount += $result->getTotalCount();
-                yield $result;
+
+                yield new SourceResultCallbackAdapter(
+                    function () use ($generator, &$nowCount) {
+                        foreach ($generator as $item) {
+                            $nowCount++;
+                            yield $item;
+                        }
+                    },
+                );
             }
-        } catch (AlreadyGetNeededCountException $exception) {
+        } catch (AlreadyGetNeededCountException) {
             return;
         }
     }

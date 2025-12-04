@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the SomeWork/OffsetPage package.
  *
@@ -11,44 +13,36 @@
 
 namespace SomeWork\OffsetPage;
 
+/**
+ * @template T
+ *
+ * @implements SourceResultInterface<T>
+ */
 class SourceResultCallbackAdapter implements SourceResultInterface
 {
     /**
-     * @var callable
+     * @var callable(): \Generator<T>
      */
     private $callback;
 
     /**
-     * @var int
+     * @param callable(): \Generator<T> $callback
      */
-    private $totalCount;
-
-    public function __construct(callable $callback, $totalCount)
+    public function __construct(callable $callback)
     {
         $this->callback = $callback;
-        $this->totalCount = (int) $totalCount;
     }
 
     /**
-     * @throws \RuntimeException
-     *
-     * @return \Generator
+     * @return \Generator<T>
      */
-    public function generator()
+    public function generator(): \Generator
     {
         $result = call_user_func($this->callback);
-        if (!is_object($result) || !$result instanceof \Generator) {
+        if (!$result instanceof \Generator) {
             throw new \UnexpectedValueException('Callback result should return Generator');
         }
 
         return $result;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTotalCount()
-    {
-        return $this->totalCount;
     }
 }
