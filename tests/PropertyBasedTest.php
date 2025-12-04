@@ -48,12 +48,11 @@ class PropertyBasedTest extends TestCase
     public function testStreamingVsBatchEquivalence(array $data): void
     {
         // Test with two separate OffsetResult instances
-        $sourceResult = new ArraySourceResult($data, count($data));
-        $generator1 = static function () use ($sourceResult) {
-            yield $sourceResult;
+        $generator1 = static function () use ($data) {
+            yield new ArraySourceResult($data, count($data));
         };
-        $generator2 = static function () use ($sourceResult) {
-            yield $sourceResult;
+        $generator2 = static function () use ($data) {
+            yield new ArraySourceResult($data, count($data));
         };
 
         $result1 = new OffsetResult($generator1());
