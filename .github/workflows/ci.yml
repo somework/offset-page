@@ -39,8 +39,5 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
 
-      - name: Static analysis
-        run: composer stan
-
-      - name: Coding standards
-        run: composer cs-check
+      - name: Quality checks
+        run: composer quality

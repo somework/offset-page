@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 - Fixed incorrect while loop condition in `OffsetResult::fetchAll()`
 
 ### Dev
+- Added `ci` composer script for running all quality checks at once
+- Improved CI workflow to use consolidated quality checks
+- Enhanced Dependabot configuration with better commit message prefixes
+- Added explicit PHP version specification to PHPStan configuration
+- Improved property declarations using PHP 8.2+ features (readonly properties)
+- Added library type specification and stability settings to composer.json
+
+### Dev
 - Migrated from Travis CI to GitHub Actions
 - Added comprehensive CI pipeline with tests, static analysis, and code style checks
 - Added composer scripts: `test`, `stan`, `cs-check`, `cs-fix`

@@ -21,16 +21,10 @@ namespace SomeWork\OffsetPage;
 class SourceResultCallbackAdapter implements SourceResultInterface
 {
     /**
-     * @var callable(): \Generator<T>
-     */
-    private $callback;
-
-    /**
      * @param callable(): \Generator<T> $callback
      */
-    public function __construct(callable $callback)
+    public function __construct(private $callback)
     {
-        $this->callback = $callback;
     }
 
     /**

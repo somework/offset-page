@@ -21,16 +21,10 @@ namespace SomeWork\OffsetPage;
 class SourceCallbackAdapter implements SourceInterface
 {
     /**
-     * @var callable
-     */
-    private $callback;
-
-    /**
      * @param callable(int, int): SourceResultInterface<T> $callback
      */
-    public function __construct(callable $callback)
+    public function __construct(private $callback)
     {
-        $this->callback = $callback;
     }
 
     /**

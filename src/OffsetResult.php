@@ -32,7 +32,7 @@ class OffsetResult
     /**
      * @return T|null
      */
-    public function fetch(): mixed
+    public function fetch()
     {
         if ($this->generator->valid()) {
             $value = $this->generator->current();

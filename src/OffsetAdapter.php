@@ -24,7 +24,7 @@ class OffsetAdapter
     /**
      * @param SourceInterface<T> $source
      */
-    public function __construct(protected SourceInterface $source)
+    public function __construct(protected readonly SourceInterface $source)
     {
     }
 
