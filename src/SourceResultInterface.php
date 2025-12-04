@@ -22,5 +22,4 @@ interface SourceResultInterface
      * @return \Generator<T>
      */
     public function generator(): \Generator;
-
 }

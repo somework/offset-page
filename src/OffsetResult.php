@@ -45,9 +45,9 @@ class OffsetResult
     }
 
     /**
-     * @return array<T>
-     *
      * @throws \UnexpectedValueException
+     *
+     * @return array<T>
      */
     public function fetchAll(): array
     {

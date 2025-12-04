@@ -244,6 +244,7 @@ class OffsetResultTest extends TestCase
         $offsetResult = new OffsetResult($generator());
         $offsetResult->fetch(); // Trigger processing
     }
+
     public function testLargeDatasetHandling(): void
     {
         $largeData = range(1, 1000);

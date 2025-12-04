@@ -33,8 +33,8 @@ class ArraySource implements SourceInterface
      */
     public function execute(int $page, int $pageSize): SourceResultInterface
     {
-
         $data = array_slice($this->data, ($page - 1) * $pageSize, $pageSize);
+
         return new ArraySourceResult(
             $data,
             count($data),
