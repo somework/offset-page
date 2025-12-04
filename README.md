@@ -116,6 +116,28 @@ This library uses [somework/offset-page-logic](https://github.com/somework/offse
 
 This is particularly useful when working with APIs or databases that only support page-based pagination but your application logic requires offset-based access.
 
+## Development
+
+### Available Scripts
+
+This project includes several composer scripts for development and quality assurance:
+
+```bash
+composer test          # Run PHPUnit tests
+composer stan          # Run PHPStan static analysis
+composer cs-check      # Check code style with PHP-CS-Fixer
+composer cs-fix         # Fix code style issues with PHP-CS-Fixer
+composer quality        # Run static analysis and code style checks
+```
+
+### Testing
+
+The library includes comprehensive tests covering:
+- Unit tests for all core classes
+- Integration tests for real-world scenarios
+- Property-based tests for edge cases
+- Memory usage and performance tests
+
 ## Author
 
 [Igor Pinchuk](https://github.com/somework) - <i.pinchuk.work@gmail.com>
