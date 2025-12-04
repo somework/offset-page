@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy: &php-matrix
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        uses: ./.github/actions/composer-install
+        with:
+          php-version: ${{ matrix.php-version }}
+
+      - name: Run tests
+        run: composer test
+
+  quality:
+    needs: tests
+    runs-on: ubuntu-latest
+    strategy: *php-matrix
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        uses: ./.github/actions/composer-install
+        with:
+          php-version: ${{ matrix.php-version }}
+
+      - name: Static analysis
+        run: composer stan
+
+      - name: Coding standards
+        run: composer cs-check

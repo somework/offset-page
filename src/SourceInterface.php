@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the SomeWork/OffsetPage package.
  *
@@ -11,13 +13,13 @@
 
 namespace SomeWork\OffsetPage;
 
+/**
+ * @template T
+ */
 interface SourceInterface
 {
     /**
-     * @param $page
-     * @param $pageSize
-     *
-     * @return SourceResultInterface
+     * @return SourceResultInterface<T>
      */
-    public function execute($page, $pageSize);
+    public function execute(int $page, int $pageSize): SourceResultInterface;
 }

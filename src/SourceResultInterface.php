@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the SomeWork/OffsetPage package.
  *
@@ -11,15 +13,14 @@
 
 namespace SomeWork\OffsetPage;
 
+/**
+ * @template T
+ */
 interface SourceResultInterface
 {
     /**
-     * @return \Generator
+     * @return \Generator<T>
      */
-    public function generator();
-
-    /**
-     * @return int
-     */
-    public function getTotalCount();
+    public function generator(): \Generator;
+    public function getTotalCount(): int;
 }
