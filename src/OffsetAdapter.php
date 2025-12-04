@@ -31,8 +31,8 @@ class OffsetAdapter
     /**
      * Execute pagination request with offset and limit.
      *
-     * @param int $offset Starting position (0-based)
-     * @param int $limit Maximum number of items to return
+     * @param int $offset   Starting position (0-based)
+     * @param int $limit    Maximum number of items to return
      * @param int $nowCount Current count of items already fetched (used for progress tracking in multi-request scenarios)
      *
      * @return OffsetResult<T>
