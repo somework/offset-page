@@ -39,7 +39,7 @@ class SourceResultCallbackAdapter implements SourceResultInterface
     public function generator(): \Generator
     {
         $result = call_user_func($this->callback);
-        if (!is_object($result) || !$result instanceof \Generator) {
+        if (!$result instanceof \Generator) {
             throw new \UnexpectedValueException('Callback result should return Generator');
         }
 

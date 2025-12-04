@@ -205,7 +205,6 @@ class IntegrationTest extends TestCase
             $accessLog[] = ['page' => $page, 'size' => $size, 'time' => microtime(true)];
 
             $startIndex = ($page - 1) * $size;
-            $endIndex = min($startIndex + $size, count($sharedData));
 
             $pageData = array_slice($sharedData, $startIndex, $size);
 
