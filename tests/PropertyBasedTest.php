@@ -79,7 +79,7 @@ class PropertyBasedTest extends TestCase
         // Test with generator yielding non-SourceResultInterface objects
         $this->expectException(\UnexpectedValueException::class);
         $generator = static function () {
-            yield "string"; // Not a SourceResultInterface
+            yield 'string'; // Not a SourceResultInterface
         };
         new OffsetResult($generator()); // Exception should be thrown during construction
     }
@@ -89,13 +89,13 @@ class PropertyBasedTest extends TestCase
         // Test with callback that returns various invalid types
         $invalidReturns = [
             null,
-            "string",
+            'string',
             42,
             [],
             new \stdClass(),
             false,
             0,
-            "",
+            '',
         ];
 
         foreach ($invalidReturns as $invalidReturn) {
@@ -110,13 +110,9 @@ class PropertyBasedTest extends TestCase
                 $exceptionThrown = true;
             }
 
-            $this->assertTrue($exceptionThrown, "Expected exception for invalid return: " . gettype($invalidReturn));
+            $this->assertTrue($exceptionThrown, 'Expected exception for invalid return: ' . gettype($invalidReturn));
         }
     }
-
-
-
-
 
     public static function randomDataSetsProvider(): array
     {

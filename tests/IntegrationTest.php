@@ -67,7 +67,7 @@ class IntegrationTest extends TestCase
 
             $pageData = [];
             for ($i = $startIndex; $i < $endIndex; $i++) {
-                $pageData[] = "record_" . ($i + 1);
+                $pageData[] = 'record_' . ($i + 1);
             }
 
             return new ArraySourceResult($pageData, $totalRecords);
@@ -161,7 +161,7 @@ class IntegrationTest extends TestCase
         // Create a large dataset
         $largeData = [];
         for ($i = 0; $i < 10000; $i++) {
-            $largeData[] = "item_" . $i;
+            $largeData[] = 'item_' . $i;
         }
 
         $source = new ArraySource($largeData);
@@ -365,7 +365,6 @@ class IntegrationTest extends TestCase
         $this->assertEquals(['success'], $result->fetchAll());
     }
 
-
     public function testNowCountIntegration(): void
     {
         // Test nowCount with SourceCallbackAdapter
@@ -404,7 +403,7 @@ class IntegrationTest extends TestCase
             $endIndex = min($startIndex + $size, $totalItems);
             $pageData = [];
             for ($i = $startIndex; $i < $endIndex; $i++) {
-                $pageData[] = "record_" . ($i + 1);
+                $pageData[] = 'record_' . ($i + 1);
             }
 
             return new ArraySourceResult($pageData, $totalItems);

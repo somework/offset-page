@@ -204,7 +204,7 @@ class SourceCallbackAdapterTest extends TestCase
         $callLog = [];
         $source = new SourceCallbackAdapter(function (int $page, int $size) use (&$callLog) {
             $callLog[] = ['page' => $page, 'size' => $size];
-            return new ArraySourceResult(["call_" . count($callLog)], 1);
+            return new ArraySourceResult(['call_' . count($callLog)], 1);
         });
 
         // First call

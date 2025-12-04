@@ -15,6 +15,7 @@ namespace SomeWork\OffsetPage;
 
 /**
  * @template T
+ *
  * @implements SourceInterface<T>
  */
 class SourceCallbackAdapter implements SourceInterface

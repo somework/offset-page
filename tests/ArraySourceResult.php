@@ -15,6 +15,7 @@ use SomeWork\OffsetPage\SourceResultInterface;
 
 /**
  * @template T
+ *
  * @implements SourceResultInterface<T>
  */
 class ArraySourceResult implements SourceResultInterface

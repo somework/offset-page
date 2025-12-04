@@ -231,7 +231,7 @@ class OffsetResultTest extends TestCase
         $this->expectExceptionMessage('Result of generator is not an instance of SomeWork\OffsetPage\SourceResultInterface');
 
         $generator = static function () {
-            yield "not an object";
+            yield 'not an object';
         };
 
         $offsetResult = new OffsetResult($generator());
