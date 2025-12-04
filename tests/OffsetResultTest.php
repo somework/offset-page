@@ -308,8 +308,9 @@ class OffsetResultTest extends TestCase
 
         while (($item = $offsetResult->fetch()) !== null) {
             $count++;
-            // Simulate some processing
+            // Simulate some processing and validate it
             $processed = $item * 2;
+            $this->assertEquals($item * 2, $processed, 'Processing simulation should work correctly');
 
             // Check memory doesn't grow excessively
             if ($count % 50 === 0) {
