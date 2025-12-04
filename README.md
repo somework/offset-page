@@ -27,14 +27,29 @@ composer require somework/offset-page
 ```php
 use SomeWork\OffsetPage\OffsetAdapter;
 use SomeWork\OffsetPage\SourceCallbackAdapter;
+use SomeWork\OffsetPage\SourceResultInterface;
+
+// Example implementation of SourceResultInterface for demonstration
+class SimpleSourceResult implements SourceResultInterface
+{
+    public function __construct(private array $data) {}
+
+    public function generator(): \Generator
+    {
+        foreach ($this->data as $item) {
+            yield $item;
+        }
+    }
+}
 
 // Create a source that returns page-based results
-$source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
+$source = new SourceCallbackAdapter(function (int $page, int $pageSize): SourceResultInterface {
     // Your page-based API call here
     // For example, fetching from a database with LIMIT/OFFSET
-    $data = fetchFromDatabase($page, $pageSize);
+    $offset = ($page - 1) * $pageSize;
+    $data = fetchFromDatabase($offset, $pageSize);
 
-    return new MySourceResult($data, $totalCount);
+    return new SimpleSourceResult($data);
 });
 
 // Create the offset adapter
@@ -51,8 +66,8 @@ while (($item = $result->fetch()) !== null) {
     // Process $item
 }
 
-// Get total count of available items
-$totalCount = $result->getTotalCount();
+// Get count of items that were actually fetched and yielded
+$fetchedCount = $result->getTotalCount(); // Returns count of items yielded by the result
 ```
 
 ### Implementing SourceResultInterface
@@ -62,23 +77,27 @@ Your data source must return objects that implement `SourceResultInterface`:
 ```php
 use SomeWork\OffsetPage\SourceResultInterface;
 
+/**
+ * @template T
+ * @implements SourceResultInterface<T>
+ */
 class MySourceResult implements SourceResultInterface
 {
+    /**
+     * @param array<T> $data
+     */
     public function __construct(
-        private array $data,
-        private int $totalCount
+        private array $data
     ) {}
 
+    /**
+     * @return \Generator<T>
+     */
     public function generator(): \Generator
     {
         foreach ($this->data as $item) {
             yield $item;
         }
-    }
-
-    public function getTotalCount(): int
-    {
-        return $this->totalCount;
     }
 }
 ```
@@ -91,14 +110,22 @@ You can also implement `SourceInterface` directly:
 use SomeWork\OffsetPage\SourceInterface;
 use SomeWork\OffsetPage\SourceResultInterface;
 
+/**
+ * @template T
+ * @implements SourceInterface<T>
+ */
 class MyApiSource implements SourceInterface
 {
+    /**
+     * @return SourceResultInterface<T>
+     */
     public function execute(int $page, int $pageSize): SourceResultInterface
     {
         // Fetch data from your API using pages
-        $response = $this->apiClient->getItems($page, $pageSize);
+        $offset = ($page - 1) * $pageSize;
+        $response = $this->apiClient->getItems($offset, $pageSize);
 
-        return new MySourceResult($response->data, $response->totalCount);
+        return new MySourceResult($response->data);
     }
 }
 
