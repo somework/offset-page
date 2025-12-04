@@ -27,9 +27,6 @@ class OffsetResult
     public function __construct(\Generator $sourceResultGenerator)
     {
         $this->generator = $this->execute($sourceResultGenerator);
-        if ($this->generator->valid()) {
-            $this->generator->current();
-        }
     }
 
     /**
@@ -55,8 +52,10 @@ class OffsetResult
     public function fetchAll(): array
     {
         $result = [];
-        while (null !== ($data = $this->fetch())) {
-            $result[] = $data;
+        while ($this->generator->valid()) {
+            $value = $this->generator->current();
+            $this->generator->next();
+            $result[] = $value;
         }
 
         return $result;
@@ -80,10 +79,8 @@ class OffsetResult
                 ));
             }
 
-            $sourceCount = $sourceResult->getResultCount();
-            $this->totalCount += $sourceCount;
-
             foreach ($sourceResult->generator() as $result) {
+                $this->totalCount++;
                 yield $result;
             }
         }

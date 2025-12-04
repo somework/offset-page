@@ -23,5 +23,4 @@ interface SourceResultInterface
      */
     public function generator(): \Generator;
 
-    public function getResultCount(): int;
 }

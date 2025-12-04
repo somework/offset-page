@@ -31,8 +31,8 @@ class OffsetAdapter
     /**
      * Execute pagination request with offset and limit.
      *
-     * @param int $offset   Starting position (0-based)
-     * @param int $limit    Maximum number of items to return
+     * @param int $offset Starting position (0-based)
+     * @param int $limit Maximum number of items to return
      * @param int $nowCount Current count of items already fetched (used for progress tracking in multi-request scenarios)
      *
      * @return OffsetResult<T>
@@ -49,13 +49,20 @@ class OffsetAdapter
     {
         try {
             while ($offsetResult = Offset::logic($offset, $limit, $nowCount)) {
-                $result = $this->source->execute($offsetResult->getPage(), $offsetResult->getSize());
-                if (0 === $result->getResultCount()) {
+                $generator = $this->source->execute($offsetResult->getPage(), $offsetResult->getSize())->generator();
+
+                if (!$generator->valid()) {
                     return;
                 }
 
-                $nowCount += $result->getResultCount();
-                yield $result;
+                yield new SourceResultCallbackAdapter(
+                    function () use ($generator, &$nowCount) {
+                        foreach ($generator as $item) {
+                            $nowCount++;
+                            yield $item;
+                        }
+                    },
+                );
             }
         } catch (AlreadyGetNeededCountException) {
             return;

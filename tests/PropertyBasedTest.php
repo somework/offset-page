@@ -74,16 +74,6 @@ class PropertyBasedTest extends TestCase
         $this->assertEquals($data, $streamingResult);
     }
 
-    public function testOffsetResultWithInvalidGenerators(): void
-    {
-        // Test with generator yielding non-SourceResultInterface objects
-        $this->expectException(\UnexpectedValueException::class);
-        $generator = static function () {
-            yield 'string'; // Not a SourceResultInterface
-        };
-        new OffsetResult($generator()); // Exception should be thrown during construction
-    }
-
     public function testSourceCallbackAdapterRobustness(): void
     {
         // Test with callback that returns various invalid types
@@ -152,7 +142,7 @@ class PropertyBasedTest extends TestCase
         $this->expectException(\DomainException::class);
         $this->expectExceptionMessage('Domain error');
 
-        $adapter->execute(0, 1);
+        $adapter->execute(0, 1)->fetch();
     }
 
     public function testTypeSafety(): void

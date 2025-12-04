@@ -35,23 +35,18 @@ class OffsetResultTest extends TestCase
     {
         $sourceResult = $this
             ->getMockBuilder(SourceResultInterface::class)
-            ->onlyMethods(['getResultCount', 'generator'])
+            ->onlyMethods(['generator'])
             ->getMock();
-
-        $sourceResult
-            ->expects($this->once())
-            ->method('getResultCount')
-            ->willReturn(10);
 
         $sourceResult
             ->method('generator')
             ->willReturn($this->getGenerator(['test']));
 
         $offsetResult = new OffsetResult($this->getGenerator([$sourceResult]));
-        $this->assertEquals(10, $offsetResult->getTotalCount());
+        $this->assertEquals(0, $offsetResult->getTotalCount());
         $offsetResult->fetchAll();
 
-        $this->assertEquals(10, $offsetResult->getTotalCount());
+        $this->assertEquals(1, $offsetResult->getTotalCount());
     }
 
     protected function getGenerator(array $value): \Generator
@@ -66,7 +61,7 @@ class OffsetResultTest extends TestCase
     {
         $sourceResult = $this
             ->getMockBuilder(SourceResultInterface::class)
-            ->onlyMethods(['getResultCount', 'generator'])
+            ->onlyMethods(['generator'])
             ->getMock();
 
         $sourceResultArray = [];
@@ -74,10 +69,9 @@ class OffsetResultTest extends TestCase
             $clone = clone $sourceResult;
             $clone
                 ->method('generator')
-                ->willReturn($this->getGenerator([$totalCountValue]));
-            $clone
-                ->method('getResultCount')
-                ->willReturn($totalCountValue);
+                ->willReturn($this->getGenerator(
+                    $totalCountValue > 0 ? array_fill(0, $totalCountValue, 'test') : [],
+                ));
             $sourceResultArray[] = $clone;
         }
 
@@ -103,7 +97,7 @@ class OffsetResultTest extends TestCase
             ],
             [
                 [-1, -10],
-                -11,
+                0,
             ],
         ];
     }
@@ -136,14 +130,14 @@ class OffsetResultTest extends TestCase
     public function testError(): void
     {
         $callback = function () {
-            return new ArraySourceResult([1], 1);
+            return new ArraySourceResult([1]);
         };
 
         $offsetAdapter = new OffsetAdapter(new SourceCallbackAdapter($callback));
         $result = $offsetAdapter->execute(0, 0);
 
-        $this->assertEquals(1, $result->getTotalCount());
         $this->assertEquals([1], $result->fetchAll());
+        $this->assertEquals(1, $result->getTotalCount());
     }
 
     public function testEmptyGenerator(): void
@@ -209,7 +203,7 @@ class OffsetResultTest extends TestCase
     public function testFetchAllAfterPartialFetch(): void
     {
         $sources = [
-            new ArraySourceResult(['p', 'q', 'r'], 3),
+            new ArraySourceResult(['p', 'q', 'r']),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
@@ -254,11 +248,11 @@ class OffsetResultTest extends TestCase
     {
         $largeData = range(1, 1000);
         $sources = [
-            new ArraySourceResult($largeData, 1000),
+            new ArraySourceResult($largeData),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $this->assertEquals(1000, $offsetResult->getTotalCount());
+        $this->assertEquals(0, $offsetResult->getTotalCount());
 
         $allResults = $offsetResult->fetchAll();
         $this->assertCount(1000, $allResults);

@@ -122,7 +122,7 @@ class OffsetAdapterTest extends TestCase
                 $data[] = "page{$page}_item".($i + 1);
             }
 
-            return new ArraySourceResult($data, 100); // Simulate 100 total items
+            return new ArraySourceResult($data); // Simulate 100 total items
         };
 
         $source = new SourceCallbackAdapter($callback);
@@ -131,7 +131,7 @@ class OffsetAdapterTest extends TestCase
 
         $expected = ['page1_item1', 'page1_item2', 'page1_item3', 'page1_item4', 'page1_item5'];
         $this->assertEquals($expected, $result->fetchAll());
-        $this->assertEquals(100, $result->getTotalCount());
+        $this->assertEquals(5, $result->getTotalCount());
     }
 
     public function testExecuteWithSourceException(): void
@@ -146,7 +146,7 @@ class OffsetAdapterTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Source database unavailable');
 
-        $adapter->execute(0, 10);
+        $adapter->execute(0, 10)->fetch();
     }
 
     #[DataProvider('paginationScenariosProvider')]

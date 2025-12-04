@@ -28,7 +28,7 @@ class SourceResultCallbackAdapter implements SourceResultInterface
     /**
      * @param callable(): \Generator<T> $callback
      */
-    public function __construct(callable $callback, protected int $totalCount)
+    public function __construct(callable $callback)
     {
         $this->callback = $callback;
     }
@@ -44,10 +44,5 @@ class SourceResultCallbackAdapter implements SourceResultInterface
         }
 
         return $result;
-    }
-
-    public function getResultCount(): int
-    {
-        return $this->totalCount;
     }
 }

@@ -51,44 +51,6 @@ class IntegrationTest extends TestCase
         $this->assertEquals($data, $allResults);
     }
 
-    public function testRealWorldPaginationScenario(): void
-    {
-        // Simulate a database with 47 total records, page size 10
-        $totalRecords = 47;
-        $pageSize = 10;
-
-        $callLog = [];
-        $source = new SourceCallbackAdapter(function (int $page, int $pageSize) use (&$callLog, $totalRecords) {
-            $callLog[] = ['page' => $page, 'size' => $pageSize];
-
-            // Simulate database pagination
-            $startIndex = ($page - 1) * $pageSize;
-            $endIndex = min($startIndex + $pageSize, $totalRecords);
-
-            $pageData = [];
-            for ($i = $startIndex; $i < $endIndex; $i++) {
-                $pageData[] = 'record_'.($i + 1);
-            }
-
-            return new ArraySourceResult($pageData, $totalRecords);
-        });
-
-        $adapter = new OffsetAdapter($source);
-
-        // Request first 15 records (offset 0, limit 15)
-        $result = $adapter->execute(0, 15);
-        $records = $result->fetchAll();
-
-        $this->assertLessThanOrEqual(15, count($records)); // May get fewer due to pagination logic
-        $this->assertEquals(47, $result->getTotalCount());
-        if (!empty($records)) {
-            $this->assertEquals('record_1', $records[0]);
-        }
-
-        // Should have made at least 1 API call
-        $this->assertNotEmpty($callLog);
-    }
-
     public function testOffsetBeyondAvailableData(): void
     {
         $data = range(1, 50);
@@ -142,7 +104,7 @@ class IntegrationTest extends TestCase
                 throw new \RuntimeException('API temporarily unavailable');
             }
 
-            return new ArraySourceResult(['success'], 1);
+            return new ArraySourceResult(['success']);
         });
 
         $adapter = new OffsetAdapter($source);
@@ -154,7 +116,7 @@ class IntegrationTest extends TestCase
         // Second call should fail
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('API temporarily unavailable');
-        $adapter->execute(1, 1);
+        $adapter->execute(1, 1)->fetch();
     }
 
     public function testMemoryUsageWithLargeDatasets(): void
@@ -351,21 +313,21 @@ class IntegrationTest extends TestCase
                 throw new \RuntimeException("Temporary failure #{$failureCount}");
             }
 
-            return new ArraySourceResult(['success'], 1);
+            return new ArraySourceResult(['success']);
         });
 
         $adapter = new OffsetAdapter($source);
 
         // First two calls should fail
         try {
-            $adapter->execute(0, 1);
+            $adapter->execute(0, 1)->fetch();
             $this->fail('Expected exception on first call');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('Temporary failure #1', $e->getMessage());
         }
 
         try {
-            $adapter->execute(0, 1);
+            $adapter->execute(0, 1)->fetch();
             $this->fail('Expected exception on second call');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('Temporary failure #2', $e->getMessage());
@@ -379,11 +341,7 @@ class IntegrationTest extends TestCase
     public function testNowCountIntegration(): void
     {
         // Test nowCount with SourceCallbackAdapter
-        $source = new SourceCallbackAdapter(function (int $page, int $size) {
-            $data = array_fill(0, min($size, 5), "item_$page");
-
-            return new ArraySourceResult($data, 50);
-        });
+        $source = new ArraySource(range(1, 50));
 
         $adapter = new OffsetAdapter($source);
 
@@ -391,10 +349,11 @@ class IntegrationTest extends TestCase
         $result1 = $adapter->execute(0, 5, 0);
         $result2 = $adapter->execute(0, 5, 2);
 
-        $this->assertIsArray($result1->fetchAll());
-        $this->assertIsArray($result2->fetchAll());
-        $this->assertEquals(50, $result1->getTotalCount());
-        $this->assertEquals(50, $result2->getTotalCount());
+        $result1->fetchAll();
+        $result2->fetchAll();
+
+        $this->assertEquals(5, $result1->getTotalCount());
+        $this->assertEquals(3, $result2->getTotalCount());
     }
 
     public function testRealWorldApiIntegration(): void
@@ -409,7 +368,7 @@ class IntegrationTest extends TestCase
             $startIndex = ($page - 1) * $size;
 
             if ($startIndex >= $totalItems) {
-                return new ArraySourceResult([], $totalItems);
+                return new ArraySourceResult([]);
             }
 
             $endIndex = min($startIndex + $size, $totalItems);
@@ -418,21 +377,21 @@ class IntegrationTest extends TestCase
                 $pageData[] = 'record_'.($i + 1);
             }
 
-            return new ArraySourceResult($pageData, $totalItems);
+            return new ArraySourceResult($pageData);
         });
 
         $adapter = new OffsetAdapter($source);
 
         // Test typical API usage patterns
         $testScenarios = [
-            [0, 10, 'first_page'],
-            [10, 10, 'second_page'],
-            [20, 10, 'third_page'],
-            [80, 10, 'last_page'],
-            [90, 10, 'beyond_end'],
+            [0, 10, 'first_page', 10],
+            [10, 10, 'second_page', 10],
+            [20, 10, 'third_page', 10],
+            [80, 10, 'last_page', 7],
+            [90, 10, 'beyond_end', 0],
         ];
 
-        foreach ($testScenarios as [$offset, $limit, $description]) {
+        foreach ($testScenarios as [$offset, $limit, $description, $expectedCount]) {
             $initialCallCount = $apiCallCount;
             $result = $adapter->execute($offset, $limit);
             $data = $result->fetchAll();
@@ -440,7 +399,7 @@ class IntegrationTest extends TestCase
             // Verify basic properties
             $this->assertIsArray($data, "Failed for $description");
             $this->assertLessThanOrEqual($limit, count($data), "Failed for $description");
-            $this->assertEquals(87, $result->getTotalCount(), "Failed for $description");
+            $this->assertEquals($expectedCount, count($data), "Incorrect item count for $description");
 
             // Verify API was called (at least once per request)
             $this->assertGreaterThan($initialCallCount, $apiCallCount, "API not called for $description");

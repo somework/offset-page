@@ -23,7 +23,7 @@ class ArraySourceResult implements SourceResultInterface
     /**
      * @param array<T> $data
      */
-    public function __construct(protected array $data, protected int $resultsCount)
+    public function __construct(protected array $data)
     {
     }
 
@@ -35,10 +35,5 @@ class ArraySourceResult implements SourceResultInterface
         foreach ($this->data as $item) {
             yield $item;
         }
-    }
-
-    public function getResultCount(): int
-    {
-        return $this->resultsCount;
     }
 }
