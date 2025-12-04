@@ -141,9 +141,9 @@ class SourceResultCallbackAdapterTest extends TestCase
         $result = new SourceResultCallbackAdapter(function () {
             for ($i = 0; $i < 5; $i++) {
                 if ($i === 2) {
-                    yield 'special_' . $i;
+                    yield 'special_'.$i;
                 } else {
-                    yield 'normal_' . $i;
+                    yield 'normal_'.$i;
                 }
             }
         }, 10); // Different total count

@@ -119,8 +119,9 @@ class OffsetAdapterTest extends TestCase
         $callback = function (int $page, int $size) {
             $data = [];
             for ($i = 0; $i < $size; $i++) {
-                $data[] = "page{$page}_item" . ($i + 1);
+                $data[] = "page{$page}_item".($i + 1);
             }
+
             return new ArraySourceResult($data, 100); // Simulate 100 total items
         };
 
@@ -163,10 +164,10 @@ class OffsetAdapterTest extends TestCase
     {
         // Based on observed behavior from testing
         return [
-            'first_page' => [range(1, 20), 0, 10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]],
-            'offset_three' => [range(1, 20), 3, 10, [4, 5, 6]], // Based on actual behavior
+            'first_page'      => [range(1, 20), 0, 10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]],
+            'offset_three'    => [range(1, 20), 3, 10, [4, 5, 6]], // Based on actual behavior
             'offset_near_end' => [range(1, 10), 8, 5, [9, 10]], // Based on actual behavior
-            'empty_result' => [range(1, 5), 10, 5, []], // Offset beyond data
+            'empty_result'    => [range(1, 5), 10, 5, []], // Offset beyond data
         ];
     }
 

@@ -63,6 +63,7 @@ class SourceCallbackAdapterTest extends TestCase
         $source = new SourceCallbackAdapter(function (int $page, int $size) {
             $this->assertEquals(0, $page);
             $this->assertEquals(0, $size);
+
             return new ArraySourceResult(['zero_params'], 1);
         });
 
@@ -80,6 +81,7 @@ class SourceCallbackAdapterTest extends TestCase
         $source = new SourceCallbackAdapter(function (int $page, int $size) {
             $this->assertEquals(1000, $page);
             $this->assertEquals(5000, $size);
+
             return new ArraySourceResult(['large_params'], 1);
         });
 
@@ -97,6 +99,7 @@ class SourceCallbackAdapterTest extends TestCase
         $source = new SourceCallbackAdapter(function (int $page, int $size) {
             $this->assertEquals(-1, $page);
             $this->assertEquals(-10, $size);
+
             return new ArraySourceResult(['negative_params'], 1);
         });
 
@@ -166,7 +169,7 @@ class SourceCallbackAdapterTest extends TestCase
 
             // Simulate pagination logic
             for ($i = 0; $i < $size; $i++) {
-                $data[] = "page{$page}_item" . ($i + 1);
+                $data[] = "page{$page}_item".($i + 1);
             }
 
             return new ArraySourceResult($data, 100); // Total of 100 items
@@ -204,7 +207,8 @@ class SourceCallbackAdapterTest extends TestCase
         $callLog = [];
         $source = new SourceCallbackAdapter(function (int $page, int $size) use (&$callLog) {
             $callLog[] = ['page' => $page, 'size' => $size];
-            return new ArraySourceResult(['call_' . count($callLog)], 1);
+
+            return new ArraySourceResult(['call_'.count($callLog)], 1);
         });
 
         // First call
