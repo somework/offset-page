@@ -13,3 +13,6 @@ phpunit.phar
 
 ### Tooling cache
 var/
+
+### Build artifacts
+build/

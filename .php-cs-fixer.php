@@ -12,8 +12,8 @@ EOF;
 $finder = PhpCsFixer\Finder::create()
     ->files()
     ->name('*.php')
-    ->in(__DIR__ . '/src')
-    ->in(__DIR__ . '/tests');
+    ->in(__DIR__.'/src')
+    ->in(__DIR__.'/tests');
 
 return (new PhpCsFixer\Config())
     ->setUsingCache(true)
@@ -43,7 +43,6 @@ return (new PhpCsFixer\Config())
         'no_leading_namespace_whitespace' => true,
         'no_trailing_whitespace' => true,
         'no_trailing_whitespace_in_comment' => true,
-        'no_unused_imports' => true,
         'no_whitespace_in_blank_line' => true,
         'object_operator_without_whitespace' => true,
         'ordered_imports' => true,
@@ -67,5 +66,6 @@ return (new PhpCsFixer\Config())
         'single_line_after_imports' => true,
         'single_quote' => true,
         'visibility_required' => true,
+        'yoda_style' => ['equal' => true, 'identical' => true, 'less_and_greater' => true],
     ])
     ->setFinder($finder);

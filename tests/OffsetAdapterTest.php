@@ -13,273 +13,455 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage\Tests;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use SomeWork\OffsetPage\Exception\InvalidPaginationArgumentException;
+use SomeWork\OffsetPage\Exception\PaginationExceptionInterface;
 use SomeWork\OffsetPage\OffsetAdapter;
 use SomeWork\OffsetPage\SourceCallbackAdapter;
-use SomeWork\OffsetPage\SourceInterface;
 
 class OffsetAdapterTest extends TestCase
 {
-    public function testConstructWithValidSource(): void
-    {
-        $source = $this->createMock(SourceInterface::class);
-        $adapter = new OffsetAdapter($source);
-
-        $this->assertInstanceOf(OffsetAdapter::class, $adapter);
-    }
-
-    public function testExecuteWithEmptyData(): void
-    {
-        $data = [];
-        $source = new ArraySource($data);
-
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute(0, 10);
-
-        $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(0, $result->getTotalCount());
-    }
-
-    public function testExecuteWithSingleItem(): void
-    {
-        $data = ['single_item'];
-        $source = new ArraySource($data);
-
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute(0, 10);
-
-        $this->assertEquals(['single_item'], $result->fetchAll());
-        $this->assertEquals(1, $result->getTotalCount());
-    }
-
-    public function testExecuteWithMultipleItems(): void
-    {
-        $data = ['item1', 'item2', 'item3', 'item4', 'item5'];
-        $source = new ArraySource($data);
-
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute(0, 10);
-
-        $this->assertEquals(['item1', 'item2', 'item3', 'item4', 'item5'], $result->fetchAll());
-        $this->assertEquals(5, $result->getTotalCount());
-    }
-
-    public function testExecuteWithOffset(): void
+    public function testAcceptsValidNowCountParameter(): void
     {
         $data = range(1, 10);
-        $source = new ArraySource($data);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+        $result = $adapter->execute(0, 3, 2);
 
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute(3, 5); // The actual behavior depends on the logic library
-
-        // Based on observed behavior, offset=3, limit=5 returns [4, 5, 6, 7, 8]
-        $this->assertEquals([4, 5, 6, 7, 8], $result->fetchAll());
-        $this->assertEquals(5, $result->getTotalCount());
+        // Should work with positive nowCount
+        $items = $result->fetchAll();
+        $this->assertSame([3], $items); // With limit=3 and nowCount=2, only 1 more item needed
+        $this->assertSame(1, $result->getFetchedCount());
     }
 
-    public function testExecuteWithLargeOffset(): void
+    public function testAcceptsValidPositiveValues(): void
     {
         $data = range(1, 10);
-        $source = new ArraySource($data);
+        $adapter = new OffsetAdapter(new ArraySource($data));
 
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute(8, 5); // Should get last 2 items
+        // Should not throw an exception with valid positive values
+        $result = $adapter->execute(1, 2);
+        $items = $result->fetchAll();
 
-        $this->assertEquals([9, 10], $result->fetchAll());
-        $this->assertEquals(2, $result->getTotalCount());
+        // Should return an array with the expected number of items
+        $this->assertIsArray($items);
+        $this->assertCount(2, $items);
     }
 
-    public function testExecuteWithOffsetBeyondData(): void
+    public function testAcceptsZeroValuesForAllParameters(): void
     {
-        $data = range(1, 5);
-        $source = new ArraySource($data);
-
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute(10, 5); // Offset beyond available data
-
-        $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(0, $result->getTotalCount());
-    }
-
-    public function testExecuteWithZeroLimit(): void
-    {
-        $data = range(1, 10);
-        $source = new ArraySource($data);
-
-        $adapter = new OffsetAdapter($source);
+        $adapter = new OffsetAdapter(new ArraySource([]));
         $result = $adapter->execute(0, 0);
 
-        $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(0, $result->getTotalCount());
+        // Should not throw an exception for the valid zero sentinel
+        $this->assertIsArray($result->fetchAll());
+        $this->assertSame(0, $result->getFetchedCount());
     }
 
-    public function testExecuteWithCallbackSource(): void
+    public function testExceptionProvidesAccessToParameterValues(): void
     {
-        $callback = function (int $page, int $size) {
-            $data = [];
-            for ($i = 0; $i < $size; $i++) {
-                $data[] = "page{$page}_item".($i + 1);
-            }
+        $adapter = new OffsetAdapter(new ArraySource([]));
 
-            return new ArraySourceResult($data); // Simulate 100 total items
+        try {
+            $adapter->execute(-5, 10);
+            $this->fail('Expected InvalidPaginationArgumentException was not thrown');
+        } catch (InvalidPaginationArgumentException $e) {
+            $this->assertSame(['offset' => -5], $e->getParameters());
+            $this->assertSame(-5, $e->getParameter('offset'));
+            $this->assertNull($e->getParameter('nonexistent'));
+            $this->assertStringContainsString('offset must be greater than or equal to zero, got -5', $e->getMessage());
+        }
+    }
+
+    public function testExceptionsImplementPaginationExceptionInterface(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        // Test that InvalidPaginationArgumentException implements the interface
+        try {
+            $adapter->execute(-1, 5);
+            $this->fail('Expected exception was not thrown');
+        } catch (PaginationExceptionInterface $e) {
+            $this->assertInstanceOf(InvalidPaginationArgumentException::class, $e);
+            $this->assertIsInt($e->getCode());
+        }
+
+        // Test that we can catch any pagination exception with the interface
+        try {
+            $adapter->execute(1, 0, 2);
+            $this->fail('Expected exception was not thrown');
+        } catch (PaginationExceptionInterface) {
+            // Successfully caught using the interface
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    public function testGeneratorMethodReturnsGeneratorWithSameData(): void
+    {
+        $data = range(1, 10);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        $result = $adapter->execute(2, 3);
+        $generator = $adapter->generator(2, 3);
+
+        // Generator should produce same data as OffsetResult
+        $generatorData = iterator_to_array($generator);
+        $resultData = $result->fetchAll();
+
+        $this->assertEquals($resultData, $generatorData);
+        $this->assertEquals([3, 4, 5], $generatorData);
+    }
+
+    public function testGeneratorMethodValidation(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $adapter->generator(-1, 5);
+    }
+
+    public function testGeneratorMethodWithLargeDataset(): void
+    {
+        $data = range(1, 1000);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        $generator = $adapter->generator(100, 50);
+
+        $result = iterator_to_array($generator);
+        $expected = array_slice($data, 100, 50);
+
+        $this->assertEquals($expected, $result);
+        $this->assertCount(50, $result);
+    }
+
+    public function testGeneratorMethodWithNowCountParameter(): void
+    {
+        $data = range(1, 10);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        $generator = $adapter->generator(0, 3, 2);
+
+        $result = iterator_to_array($generator);
+
+        // With nowCount=2, only 1 item should be returned (limit - nowCount)
+        $this->assertEquals([3], $result);
+        $this->assertCount(1, $result);
+    }
+
+    public function testGeneratorMethodWithZeroLimitSentinel(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource(range(1, 5)));
+
+        $generator = $adapter->generator(0, 0);
+
+        // Should return empty generator
+        $this->assertEquals([], iterator_to_array($generator));
+    }
+
+    public function testLoopTerminatesAfterRequestedLimit(): void
+    {
+        $counter = 0;
+        $callback = function (int $page, int $size) use (&$counter) {
+            $counter++;
+            yield from range(1, $size);
         };
 
-        $source = new SourceCallbackAdapter($callback);
+        $adapter = new OffsetAdapter(new SourceCallbackAdapter($callback));
+        $result = $adapter->execute(0, 5);
+
+        $this->assertSame([1, 2, 3, 4, 5], $result->fetchAll());
+        $this->assertSame(5, $result->getFetchedCount());
+        $this->assertLessThanOrEqual(2, $counter, 'Adapter should not loop endlessly when data exists.');
+    }
+
+    public function testNowCountStopsWhenAlreadyEnough(): void
+    {
+        $data = range(1, 10);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        $result = $adapter->execute(0, 5, 5);
+        $this->assertSame([], $result->fetchAll());
+        $this->assertSame(0, $result->getFetchedCount());
+    }
+
+    public function testOffsetGreaterThanLimitNonDivisibleUsesDivisorMapping(): void
+    {
+        $data = range(1, 100);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        $result = $adapter->execute(47, 22);
+        $expected = array_slice($data, 47, 22);
+
+        $this->assertSame($expected, $result->fetchAll());
+        $this->assertSame(22, $result->getFetchedCount());
+    }
+
+    public function testOffsetLessThanLimitUsesLogicPaginationAndStopsAtLimit(): void
+    {
+        $data = range(1, 20);
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        $result = $adapter->execute(3, 5);
+
+        $this->assertSame([4, 5, 6, 7, 8], $result->fetchAll());
+        $this->assertSame(5, $result->getFetchedCount());
+    }
+
+    public function testRejectsLimitZeroWhenNowCountProvided(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $this->expectExceptionMessage(
+            'Zero limit is only allowed when both offset and nowCount are also zero (current: offset=0, limit=0, nowCount=5). Zero limit indicates "fetch all remaining items" and can only be used at the start of pagination. For unlimited fetching, use a very large limit value instead.',
+        );
+        $adapter->execute(0, 0, 5);
+    }
+
+    public function testRejectsLimitZeroWhenOffsetOrNowCountProvided(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $adapter->execute(5, 0);
+    }
+
+    public function testRejectsLimitZeroWithBothOffsetAndNowCountNonZero(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $this->expectExceptionMessage(
+            'Zero limit is only allowed when both offset and nowCount are also zero (current: offset=1, limit=0, nowCount=1). Zero limit indicates "fetch all remaining items" and can only be used at the start of pagination. For unlimited fetching, use a very large limit value instead.',
+        );
+        $adapter->execute(1, 0, 1);
+    }
+
+    public function testRejectsNegativeArguments(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $adapter->execute(-1, 1);
+    }
+
+    public function testRejectsNegativeLimit(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $this->expectExceptionMessage(
+            'limit must be greater than or equal to zero, got -1. Use a non-negative integer to specify the maximum number of items to return.',
+        );
+        $adapter->execute(0, -1);
+    }
+
+    public function testRejectsNegativeNowCount(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $this->expectExceptionMessage(
+            'nowCount must be greater than or equal to zero, got -1. Use a non-negative integer to specify the number of items already fetched.',
+        );
+        $adapter->execute(0, 5, -1);
+    }
+
+    public function testRejectsNegativeOffset(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        $this->expectException(InvalidPaginationArgumentException::class);
+        $this->expectExceptionMessage(
+            'offset must be greater than or equal to zero, got -1. Use a non-negative integer to specify the starting position in the dataset.',
+        );
+        $adapter->execute(-1, 5);
+    }
+
+    public function testStopsWhenSourceReturnsEmptyImmediately(): void
+    {
+        $callback = function (int $page, int $size) {
+            // Return empty generator
+            yield from [];
+        };
+
+        $adapter = new OffsetAdapter(new SourceCallbackAdapter($callback));
+        $result = $adapter->execute(0, 5);
+
+        $this->assertSame([], $result->fetchAll());
+        $this->assertSame(0, $result->getFetchedCount());
+    }
+
+    public function testZeroLimitExceptionProvidesAllParameterValues(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource([]));
+
+        try {
+            $adapter->execute(2, 0, 3);
+            $this->fail('Expected InvalidPaginationArgumentException was not thrown');
+        } catch (InvalidPaginationArgumentException $e) {
+            $expectedParams = ['offset' => 2, 'limit' => 0, 'nowCount' => 3];
+            $this->assertSame($expectedParams, $e->getParameters());
+            $this->assertSame(2, $e->getParameter('offset'));
+            $this->assertSame(0, $e->getParameter('limit'));
+            $this->assertSame(3, $e->getParameter('nowCount'));
+        }
+    }
+
+    public function testZeroLimitSentinelReturnsEmptyResult(): void
+    {
+        $adapter = new OffsetAdapter(new ArraySource(range(1, 5)));
+        $result = $adapter->execute(0, 0);
+
+        $this->assertSame([], $result->fetchAll());
+        $this->assertSame(0, $result->getFetchedCount());
+    }
+
+    public function testFromCallbackCreatesAdapterWithCallbackSource(): void
+    {
+        $data = ['apple', 'banana', 'cherry', 'date', 'elderberry'];
+        $callCount = 0;
+
+        $adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) use ($data, &$callCount) {
+            $callCount++;
+            $startIndex = ($page - 1) * $pageSize;
+
+            if ($startIndex >= count($data)) {
+                yield from [];
+
+                return;
+            }
+
+            $items = array_slice($data, $startIndex, $pageSize);
+            yield from $items;
+        });
+
+        // Test that the adapter works correctly - request first 3 items
+        $result = $adapter->execute(0, 3);
+        $items = $result->fetchAll();
+
+        $this->assertSame(['apple', 'banana', 'cherry'], $items);
+        $this->assertSame(3, $result->getFetchedCount());
+        $this->assertSame(1, $callCount); // Callback should be called once for page 1
+
+        // Reset call count for next test
+        $callCount = 0;
+
+        // Test pagination works - request next 2 items
+        $result2 = $adapter->execute(3, 2);
+        $items2 = $result2->fetchAll();
+
+        $this->assertSame(['date', 'elderberry'], $items2);
+        $this->assertSame(2, $result2->getFetchedCount());
+        // Note: pagination logic may call callback multiple times to satisfy the request
+        $this->assertGreaterThanOrEqual(1, $callCount);
+    }
+
+    public function testFromCallbackWithEmptyData(): void
+    {
+        $adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) {
+            yield from []; // Always return empty
+        });
+
+        $result = $adapter->execute(0, 10);
+        $items = $result->fetchAll();
+
+        $this->assertSame([], $items);
+        $this->assertSame(0, $result->getFetchedCount());
+    }
+
+    public function testExecuteHandlesSourceReturningEmptyGenerator(): void
+    {
+        // Create a source that returns an empty generator immediately
+        $source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
+            // Return an empty generator (never yields anything)
+            return;
+            yield; // This line is never reached
+        });
+
         $adapter = new OffsetAdapter($source);
         $result = $adapter->execute(0, 5);
 
-        $expected = ['page1_item1', 'page1_item2', 'page1_item3', 'page1_item4', 'page1_item5'];
-        $this->assertEquals($expected, $result->fetchAll());
-        $this->assertEquals(5, $result->getTotalCount());
+        $items = $result->fetchAll();
+        $this->assertSame([], $items);
+        $this->assertSame(0, $result->getFetchedCount());
     }
 
-    public function testExecuteWithSourceException(): void
+    public function testGeneratorMethodWithEdgeCaseParameters(): void
     {
-        $callback = function () {
-            throw new \RuntimeException('Source database unavailable');
-        };
+        $data = ['test'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
 
-        $source = new SourceCallbackAdapter($callback);
-        $adapter = new OffsetAdapter($source);
+        // Test generator method with parameters that might trigger edge cases
+        $generator = $adapter->generator(0, 1);
+        $items = iterator_to_array($generator);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Source database unavailable');
-
-        $adapter->execute(0, 10)->fetch();
+        $this->assertSame(['test'], $items);
     }
 
-    #[DataProvider('paginationScenariosProvider')]
-    public function testPaginationScenarios(array $data, int $offset, int $limit, array $expected): void
+    public function testAllMethodsExecutedThroughDifferentPaths(): void
     {
-        $source = new ArraySource($data);
-        $adapter = new OffsetAdapter($source);
-        $result = $adapter->execute($offset, $limit);
+        $data = ['item1', 'item2', 'item3'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
 
-        $this->assertEquals($expected, $result->fetchAll());
-        $this->assertEquals(count($expected), $result->getTotalCount());
+        // Test execute method (covers logic, assertArgumentsAreValid, createLimitedGenerator, shouldContinuePagination)
+        $result1 = $adapter->execute(0, 2);
+        $this->assertSame(['item1', 'item2'], $result1->fetchAll());
+
+        // Test generator method (covers same internal methods)
+        $generator = $adapter->generator(1, 2);
+        $this->assertSame(['item2', 'item3'], iterator_to_array($generator));
+
+        // Test fetchAll method (covers same internal methods)
+        $items = $adapter->fetchAll(2, 1);
+        $this->assertSame(['item3'], $items);
     }
 
-    public static function paginationScenariosProvider(): array
+    public function testLimitReachedInGeneratorProcessing(): void
     {
-        // Based on observed behavior from testing
-        return [
-            'first_page'      => [range(1, 20), 0, 10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]],
-            'offset_three'    => [range(1, 20), 3, 10, [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]],
-            'offset_near_end' => [range(1, 10), 8, 5, [9, 10]],
-            'empty_result'    => [range(1, 5), 10, 5, []], // Offset beyond data
-        ];
-    }
-
-    public function testNowCountParameter(): void
-    {
-        // Test that nowCount parameter is accepted and works correctly
-        $data = ['a', 'b', 'c', 'd', 'e'];
-        $source = new ArraySource($data);
-        $adapter = new OffsetAdapter($source);
-
-        // Test with nowCount = 0 (default)
-        $result1 = $adapter->execute(0, 3, 0);
-        $fetched1 = $result1->fetchAll();
-        $this->assertIsArray($fetched1);
-        $this->assertEquals(3, $result1->getTotalCount());
-
-        // Test with nowCount = 1 (should still work)
-        $result2 = $adapter->execute(0, 3, 1);
-        $fetched2 = $result2->fetchAll();
-        $this->assertSame(['b', 'c'], $fetched2);
-        $this->assertEquals(2, $result2->getTotalCount());
-
-        // Test optional parameter (defaults to 0)
-        $result3 = $adapter->execute(0, 3); // No nowCount parameter
-        $fetched3 = $result3->fetchAll();
-        $this->assertEquals($fetched1, $fetched3); // Should be same as explicit 0
-    }
-
-    public function testRealisticPaginationScenarios(): void
-    {
-        // Test realistic pagination scenarios that would be used in real applications
-        $largeDataset = range(1, 1000);
-        $source = new ArraySource($largeDataset);
-        $adapter = new OffsetAdapter($source);
-
-        // Test typical pagination: get first page
-        $result1 = $adapter->execute(0, 20); // Page 1: items 1-20
-        $page1 = $result1->fetchAll();
-        $this->assertIsArray($page1);
-        $this->assertLessThanOrEqual(20, count($page1));
-        $this->assertEquals(count($page1), $result1->getTotalCount());
-        if (!empty($page1)) {
-            $this->assertGreaterThanOrEqual(1, $page1[0]); // Should contain positive integers
-        }
-
-        // Test second page
-        $result2 = $adapter->execute(20, 20); // Page 2: items 21-40
-        $page2 = $result2->fetchAll();
-        $this->assertIsArray($page2);
-        $this->assertLessThanOrEqual(20, count($page2));
-        $this->assertEquals(count($page2), $result2->getTotalCount());
-
-        // Pages should be different (no overlap in typical pagination)
-        if (!empty($page1) && !empty($page2)) {
-            $this->assertNotEquals($page1[0], $page2[0]);
-        }
-
-        // Test large offset
-        $result3 = $adapter->execute(950, 50); // Near end of dataset
-        $page3 = $result3->fetchAll();
-        $this->assertIsArray($page3);
-        $this->assertLessThanOrEqual(50, count($page3));
-        $this->assertEquals(count($page3), $result3->getTotalCount());
-
-        // Test offset beyond dataset
-        $result4 = $adapter->execute(2000, 10); // Way beyond end
-        $page4 = $result4->fetchAll();
-        $this->assertIsArray($page4);
-        $this->assertEquals(count($page4), $result4->getTotalCount());
-        // Should return empty or partial results, but not crash
-    }
-
-    public function testPaginationConsistency(): void
-    {
-        // Test that pagination behaves consistently across multiple calls
-        $dataset = range(1, 200);
-        $source = new ArraySource($dataset);
-        $adapter = new OffsetAdapter($source);
-
-        // Make the same request multiple times - should get consistent results
-        $results = [];
-        for ($i = 0; $i < 3; $i++) {
-            $result = $adapter->execute(40, 10); // Same request each time
-            $results[] = $result->fetchAll();
-            $this->assertEquals(count($results[0]), $result->getTotalCount());
-        }
-
-        // All results should be identical
-        $this->assertEquals($results[0], $results[1]);
-        $this->assertEquals($results[1], $results[2]);
-    }
-
-    public function testPaginationWithDifferentLimits(): void
-    {
-        // Test that different limits work correctly
-        $dataset = range(1, 100);
-        $source = new ArraySource($dataset);
-        $adapter = new OffsetAdapter($source);
-
-        $limits = [1, 5, 10, 25, 50, 100];
-        foreach ($limits as $limit) {
-            $result = $adapter->execute(0, $limit);
-            $data = $result->fetchAll();
-
-            $this->assertIsArray($data);
-            $this->assertLessThanOrEqual($limit, count($data));
-            $this->assertEquals(count($data), $result->getTotalCount());
-
-            // Data should start from beginning
-            if (!empty($data)) {
-                $this->assertEquals(1, $data[0]);
+        // Create a source that yields more items than the limit to force the break
+        $source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
+            // Yield 5 items, but we'll request limit 3, so break should trigger
+            for ($i = 1; 5 >= $i; $i++) {
+                yield "item{$i}";
             }
-        }
+        });
+
+        $adapter = new OffsetAdapter($source);
+
+        // Request limit 3 - this should trigger the break in createLimitedGenerator
+        // when totalDelivered >= limit (line 204)
+        $result = $adapter->execute(0, 3);
+        $items = $result->fetchAll();
+
+        $this->assertSame(['item1', 'item2', 'item3'], $items);
+        $this->assertSame(3, $result->getFetchedCount());
+    }
+
+    public function testPaginationLogicWithLargeLimits(): void
+    {
+        $data = ['item1', 'item2'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        // Test with a very large limit to ensure we don't hit the limit break
+        $result = $adapter->execute(0, 100);
+        $items = $result->fetchAll();
+
+        $this->assertSame(['item1', 'item2'], $items);
+        $this->assertSame(2, $result->getFetchedCount());
+    }
+
+    public function testPaginationWithExtremeParameters(): void
+    {
+        $data = ['item1'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        // Test with parameters that might cause pagination logic to return edge cases
+        // This is an attempt to trigger the invalid page/pageSize check (line 138)
+        $result = $adapter->execute(PHP_INT_MAX - 10, 1);
+
+        // Should handle gracefully regardless of pagination logic behavior
+        $items = $result->fetchAll();
+        $this->assertIsArray($items);
+        $this->assertSame(0, $result->getFetchedCount()); // Likely no valid pages found
     }
 }

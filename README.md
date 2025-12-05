@@ -5,14 +5,37 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PHP Version](https://img.shields.io/packagist/php-v/somework/offset-page.svg)](https://packagist.org/packages/somework/offset-page)
 
-**Offset source adapter for PHP 8.2+**
+# Transform page-based APIs into offset-based pagination with zero hassle
 
-This library provides an adapter to fetch items from data sources that only support page-based pagination, converting offset-based requests to page-based requests internally.
+Convert any page-based data source (APIs, databases, external services) into seamless offset-based pagination. Perfect for when your app needs "give me items 50-99" but your data source only speaks "give me page 3 with 25 items each".
 
-## Requirements
+✨ **Framework-agnostic** • 🚀 **High performance** • 🛡️ **Type-safe** • 🧪 **Well tested**
 
-- PHP 8.2 or higher
-- [somework/offset-page-logic](https://github.com/somework/offset-page-logic) ^2.0
+## Why This Package?
+
+**The Problem**: Your application uses offset-based pagination ("show items 100-199"), but your database or API only supports page-based pagination ("give me page 5 with 20 items").
+
+**Manual Solution**: Write complex math to convert offsets to pages, handle edge cases, manage memory efficiently, and deal with different data source behaviors.
+
+**This Package**: Handles all the complexity automatically. Just provide a callback that fetches pages, and get seamless offset-based access.
+
+### Why Choose This Over Manual Implementation?
+
+- ✅ **Zero Boilerplate** - One callback function vs dozens of lines of pagination math
+- ✅ **Memory Efficient** - Lazy loading prevents loading unnecessary data
+- ✅ **Type Safe** - Full PHP 8.2+ type safety with generics
+- ✅ **Well Tested** - Comprehensive test suite covering edge cases
+- ✅ **Framework Agnostic** - Works with any PHP project (Laravel, Symfony, plain PHP, etc.)
+- ✅ **Production Ready** - Used in real applications with battle-tested logic
+
+### Why Choose This Over Framework-Specific Solutions?
+
+Unlike Laravel's `paginate()` or Symfony's pagination components that are tied to specific frameworks and ORMs, this package:
+
+- Works with **any data source** (SQL, NoSQL, REST APIs, GraphQL, external services)
+- Has **zero dependencies** on frameworks or ORMs
+- Provides **consistent behavior** across different projects and teams
+- Is **future-proof** - not tied to any framework's roadmap
 
 ## Installation
 
@@ -20,128 +43,150 @@ This library provides an adapter to fetch items from data sources that only supp
 composer require somework/offset-page
 ```
 
-## Usage
+## Quickstart
 
-### Basic Example
+**Get started in 30 seconds:**
 
 ```php
 use SomeWork\OffsetPage\OffsetAdapter;
-use SomeWork\OffsetPage\SourceCallbackAdapter;
-use SomeWork\OffsetPage\SourceResultInterface;
 
-// Example implementation of SourceResultInterface for demonstration
-class SimpleSourceResult implements SourceResultInterface
-{
-    public function __construct(private array $data) {}
-
-    public function generator(): \Generator
-    {
-        foreach ($this->data as $item) {
-            yield $item;
-        }
-    }
+// Your page-based API or database function
+function fetchPage(int $page, int $pageSize): array {
+    $offset = ($page - 1) * $pageSize;
+    // Your database query or API call here
+    return fetchFromDatabase($offset, $pageSize);
 }
 
-// Create a source that returns page-based results
-$source = new SourceCallbackAdapter(function (int $page, int $pageSize): SourceResultInterface {
-    // Your page-based API call here
-    // For example, fetching from a database with LIMIT/OFFSET
-    $offset = ($page - 1) * $pageSize;
-    $data = fetchFromDatabase($offset, $pageSize);
-
-    return new SimpleSourceResult($data);
+// Create adapter with a callback
+$adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) {
+    $data = fetchPage($page, $pageSize);
+    foreach ($data as $item) {
+        yield $item;
+    }
 });
 
-// Create the offset adapter
-$adapter = new OffsetAdapter($source);
+// Get items 50-99 (that's offset 50, limit 50)
+$items = $adapter->fetchAll(50, 50);
 
-// Fetch items 50-99 (offset 50, limit 50)
-$result = $adapter->execute(50, 50);
-
-// Get all fetched items
-$items = $result->fetchAll();
-
-// Or fetch items one by one
-while (($item = $result->fetch()) !== null) {
-    // Process $item
-}
-
-// Get count of items that were actually fetched and yielded
-$fetchedCount = $result->getTotalCount(); // Returns count of items yielded by the result
-```
-
-### Implementing SourceResultInterface
-
-Your data source must return objects that implement `SourceResultInterface`:
-
-```php
-use SomeWork\OffsetPage\SourceResultInterface;
-
-/**
- * @template T
- * @implements SourceResultInterface<T>
- */
-class MySourceResult implements SourceResultInterface
-{
-    /**
-     * @param array<T> $data
-     */
-    public function __construct(
-        private array $data
-    ) {}
-
-    /**
-     * @return \Generator<T>
-     */
-    public function generator(): \Generator
-    {
-        foreach ($this->data as $item) {
-            yield $item;
-        }
-    }
-}
-```
-
-### Using Custom Source Classes
-
-You can also implement `SourceInterface` directly:
-
-```php
-use SomeWork\OffsetPage\SourceInterface;
-use SomeWork\OffsetPage\SourceResultInterface;
-
-/**
- * @template T
- * @implements SourceInterface<T>
- */
-class MyApiSource implements SourceInterface
-{
-    /**
-     * @return SourceResultInterface<T>
-     */
-    public function execute(int $page, int $pageSize): SourceResultInterface
-    {
-        // Fetch data from your API using pages
-        $offset = ($page - 1) * $pageSize;
-        $response = $this->apiClient->getItems($offset, $pageSize);
-
-        return new MySourceResult($response->data);
-    }
-}
-
-$adapter = new OffsetAdapter(new MyApiSource());
-$result = $adapter->execute(100, 25);
+// That's it! Your page-based source now works with offset-based requests.
 ```
 
 ## How It Works
 
-This library uses [somework/offset-page-logic](https://github.com/somework/offset-page-logic) internally to convert offset-based requests to page-based requests. When you request items with an offset and limit, the library:
+The adapter automatically converts your offset-based requests into page-based requests:
 
-1. Calculates which pages need to be fetched
-2. Calls your source for each required page
-3. Combines the results into a single offset-based result
+```php
+// You want: "Give me items 50-99"
+$items = $adapter->fetchAll(50, 50);
 
-This is particularly useful when working with APIs or databases that only support page-based pagination but your application logic requires offset-based access.
+// The adapter translates this into:
+// Page 3 (items 51-75), Page 4 (items 76-100)
+// Then returns exactly items 50-99 from the results
+```
+
+## Usage Patterns
+
+### Database with LIMIT/OFFSET
+
+```php
+$adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) {
+    $offset = ($page - 1) * $pageSize;
+
+    $stmt = $pdo->prepare("SELECT * FROM users LIMIT ? OFFSET ?");
+    $stmt->execute([$pageSize, $offset]);
+
+    foreach ($stmt->fetchAll() as $user) {
+        yield $user;
+    }
+});
+
+$users = $adapter->fetchAll(100, 25); // Users 100-124
+```
+
+### REST API with Page Parameters
+
+```php
+$adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) {
+    $response = $httpClient->get("/api/products?page={$page}&size={$pageSize}");
+    $data = json_decode($response->getBody(), true);
+
+    foreach ($data['products'] as $product) {
+        yield $product;
+    }
+});
+
+$products = $adapter->fetchAll(50, 20); // Products 50-69
+```
+
+### Custom Source Implementation
+
+For complex scenarios, implement `SourceInterface`:
+
+```php
+use SomeWork\OffsetPage\SourceInterface;
+
+class DatabaseSource implements SourceInterface
+{
+    public function __construct(private PDO $pdo) {}
+
+    public function execute(int $page, int $pageSize): \Generator
+    {
+        $offset = ($page - 1) * $pageSize;
+        $stmt = $this->pdo->prepare("SELECT * FROM items LIMIT ? OFFSET ?");
+        $stmt->execute([$pageSize, $offset]);
+
+        foreach ($stmt->fetchAll() as $item) {
+            yield $item;
+        }
+    }
+}
+
+$adapter = new OffsetAdapter(new DatabaseSource($pdo));
+$items = $adapter->fetchAll(1000, 100);
+```
+
+## Advanced Usage
+
+### Error Handling
+
+The library provides specific exceptions for different error types:
+
+```php
+use SomeWork\OffsetPage\Exception\InvalidPaginationArgumentException;
+use SomeWork\OffsetPage\Exception\PaginationExceptionInterface;
+
+try {
+    $result = $adapter->fetchAll(-1, 50); // Invalid!
+} catch (InvalidPaginationArgumentException $e) {
+    echo "Invalid parameters: " . $e->getMessage();
+} catch (PaginationExceptionInterface $e) {
+    echo "Pagination error: " . $e->getMessage();
+}
+```
+
+### Streaming Results
+
+For memory-efficient processing of large result sets:
+
+```php
+$result = $adapter->execute(1000, 500);
+
+while (null !== ($item = $result->fetch())) {
+    processItem($item); // Process one at a time
+}
+```
+
+### Getting Result Metadata
+
+```php
+$result = $adapter->execute(50, 25);
+$items = $result->fetchAll();
+$count = $result->getFetchedCount(); // Number of items actually returned
+```
+
+## Upgrading
+
+See [UPGRADE.md](UPGRADE.md) for migration guides between major versions, including breaking changes and upgrade paths.
 
 ## Development
 
@@ -160,10 +205,12 @@ composer quality        # Run static analysis and code style checks
 ### Testing
 
 The library includes comprehensive tests covering:
+
 - Unit tests for all core classes
 - Integration tests for real-world scenarios
 - Property-based tests for edge cases
 - Memory usage and performance tests
+- Exception handling scenarios
 
 ## Author
 

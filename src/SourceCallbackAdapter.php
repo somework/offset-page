@@ -13,7 +13,16 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
+
 /**
+ * Convenience adapter for callback-based data sources.
+ *
+ * Use this when you want to provide data via a simple callback function
+ * instead of implementing the SourceInterface directly.
+ *
+ * Your callback receives (page, pageSize) parameters and should return a Generator.
+ *
  * @template T
  *
  * @implements SourceInterface<T>
@@ -21,20 +30,32 @@ namespace SomeWork\OffsetPage;
 class SourceCallbackAdapter implements SourceInterface
 {
     /**
-     * @param callable(int, int): SourceResultInterface<T> $callback
+     * Wraps a callable data source for use as a SourceInterface implementation.
+     *
+     * @param callable(int, int): \Generator<T> $callback A callable that accepts the 1-based page number and page size, and yields items of type `T`.
      */
     public function __construct(private $callback)
     {
     }
 
     /**
-     * @return SourceResultInterface<T>
+     * Invoke the configured callback to produce a page of results as a Generator.
+     *
+     * Calls the adapter's callback with the provided page and page size and returns the resulting Generator.
+     *
+     * @throws InvalidPaginationResultException If the callback does not return a `\Generator`.
+     *
+     * @return \Generator<T> A Generator that yields page results of type `T`.
      */
-    public function execute(int $page, int $pageSize): SourceResultInterface
+    public function execute(int $page, int $pageSize): \Generator
     {
         $result = call_user_func($this->callback, $page, $pageSize);
-        if (!is_object($result) || !$result instanceof SourceResultInterface) {
-            throw new \UnexpectedValueException('Callback should return SourceResultInterface object');
+        if (!$result instanceof \Generator) {
+            throw InvalidPaginationResultException::forInvalidCallbackResult(
+                $result,
+                \Generator::class,
+                'should return Generator',
+            );
         }
 
         return $result;

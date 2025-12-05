@@ -1,14 +1,36 @@
 {
   "name": "somework/offset-page",
-  "description": "Adapter to fetch items from source that know only pages",
+  "description": "Convert page-based APIs to offset-based pagination. Transform any paginated data source into seamless offset-based access for databases, REST APIs, and external services.",
+  "keywords": [
+    "pagination",
+    "offset",
+    "offset-pagination",
+    "page-based",
+    "database",
+    "api",
+    "adapter",
+    "converter",
+    "pagination-adapter",
+    "limit-offset",
+    "page-size",
+    "data-source",
+    "framework-agnostic",
+    "php8"
+  ],
   "type": "library",
   "license": "MIT",
+  "homepage": "https://github.com/somework/offset-page",
   "authors": [
     {
       "name": "Pinchuk Igor",
-      "email": "i.pinchuk.work@gmail.com"
+      "email": "i.pinchuk.work@gmail.com",
+      "homepage": "https://github.com/somework"
     }
   ],
+  "support": {
+    "issues": "https://github.com/somework/offset-page/issues",
+    "source": "https://github.com/somework/offset-page"
+  },
   "autoload": {
     "psr-4": {
       "SomeWork\\OffsetPage\\": "src/"
@@ -32,6 +54,7 @@
   "prefer-stable": true,
   "scripts": {
     "test": "vendor/bin/phpunit",
+    "test-coverage": "vendor/bin/phpunit --coverage-html=build/coverage",
     "stan": "vendor/bin/phpstan analyse -c phpstan.neon.dist",
     "cs-check": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff",
     "cs-fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php",

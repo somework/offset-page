@@ -21,13 +21,50 @@ use SomeWork\OffsetPage\SourceCallbackAdapter;
 
 class PropertyBasedTest extends TestCase
 {
+    public static function randomDataSetsProvider(): array
+    {
+        $testCases = [];
+
+        // Generate various random datasets for OffsetResult testing only
+        for ($i = 0; 3 > $i; $i++) {
+            $size = random_int(1, 20);
+            $data = [];
+            for ($j = 0; $j < $size; $j++) {
+                $data[] = random_int(0, 100);
+            }
+
+            $testCases["random_$i"] = [$data];
+        }
+
+        // Add some specific edge cases
+        return array_merge($testCases, [
+            'empty'    => [[]],
+            'single'   => [['item']],
+            'multiple' => [range(1, 10)],
+        ]);
+    }
+
+    public function testExceptionPropagation(): void
+    {
+        // Test that exceptions in callbacks are properly propagated
+        $source = new SourceCallbackAdapter(function (int $_page, int $_pageSize) {
+            throw new \DomainException('Domain error');
+        });
+
+        $adapter = new OffsetAdapter($source);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Domain error');
+
+        $adapter->execute(0, 1)->fetch();
+    }
+
     #[DataProvider('randomDataSetsProvider')]
     public function testOffsetResultProperties(array $data): void
     {
-        // Create a simple source result directly to test OffsetResult behavior
-        $sourceResult = new ArraySourceResult($data, count($data));
-        $generator = static function () use ($sourceResult) {
-            yield $sourceResult;
+        // Create a generator that yields the data directly
+        $generator = static function () use ($data) {
+            yield (static fn () => yield from $data)();
         };
 
         $result = new OffsetResult($generator());
@@ -36,12 +73,43 @@ class PropertyBasedTest extends TestCase
         $allData = $result->fetchAll();
         $this->assertEquals($data, $allData);
 
-        // Property 3: getTotalCount() should be consistent
-        $this->assertEquals(count($data), $result->getTotalCount());
-        $this->assertEquals(count($data), $result->getTotalCount()); // Call again
+        // Property 3: getFetchedCount() should be consistent
+        $this->assertEquals(count($data), $result->getFetchedCount());
+        $this->assertEquals(count($data), $result->getFetchedCount()); // Call again
 
         // Property 4: fetch() after fetchAll() should return null
         $this->assertNull($result->fetch());
+    }
+
+    public function testSourceCallbackAdapterRobustness(): void
+    {
+        // Test with callback that returns various invalid types
+        $invalidReturns = [
+            null,
+            'string',
+            42,
+            [],
+            new \stdClass(),
+            false,
+            0,
+            '',
+        ];
+
+        foreach ($invalidReturns as $invalidReturn) {
+            $source = new SourceCallbackAdapter(
+                fn (int $_page, int $_pageSize) => $invalidReturn,
+            );
+
+            $exceptionThrown = false;
+
+            try {
+                $source->execute(1, 1);
+            } catch (\UnexpectedValueException) {
+                $exceptionThrown = true;
+            }
+
+            $this->assertTrue($exceptionThrown, 'Expected exception for invalid return: '.gettype($invalidReturn));
+        }
     }
 
     #[DataProvider('randomDataSetsProvider')]
@@ -49,10 +117,10 @@ class PropertyBasedTest extends TestCase
     {
         // Test with two separate OffsetResult instances
         $generator1 = static function () use ($data) {
-            yield new ArraySourceResult($data, count($data));
+            yield (static fn () => yield from $data)();
         };
         $generator2 = static function () use ($data) {
-            yield new ArraySourceResult($data, count($data));
+            yield (static fn () => yield from $data)();
         };
 
         $result1 = new OffsetResult($generator1());
@@ -73,77 +141,6 @@ class PropertyBasedTest extends TestCase
         $this->assertEquals($data, $streamingResult);
     }
 
-    public function testSourceCallbackAdapterRobustness(): void
-    {
-        // Test with callback that returns various invalid types
-        $invalidReturns = [
-            null,
-            'string',
-            42,
-            [],
-            new \stdClass(),
-            false,
-            0,
-            '',
-        ];
-
-        foreach ($invalidReturns as $invalidReturn) {
-            $source = new SourceCallbackAdapter(function () use ($invalidReturn) {
-                return $invalidReturn;
-            });
-
-            $exceptionThrown = false;
-
-            try {
-                $source->execute(1, 1);
-            } catch (\UnexpectedValueException) {
-                $exceptionThrown = true;
-            }
-
-            $this->assertTrue($exceptionThrown, 'Expected exception for invalid return: '.gettype($invalidReturn));
-        }
-    }
-
-    public static function randomDataSetsProvider(): array
-    {
-        $testCases = [];
-
-        // Generate various random datasets for OffsetResult testing only
-        for ($i = 0; $i < 3; $i++) {
-            $size = random_int(1, 20);
-            $data = [];
-            for ($j = 0; $j < $size; $j++) {
-                $data[] = random_int(0, 100);
-            }
-
-            $testCases["random_{$i}"] = [$data];
-        }
-
-        // Add some specific edge cases
-        $testCases = array_merge($testCases, [
-            'empty'    => [[]],
-            'single'   => [['item']],
-            'multiple' => [range(1, 10)],
-        ]);
-
-        return $testCases;
-    }
-
-    public function testExceptionPropagation(): void
-    {
-        // Test that exceptions in callbacks are properly propagated
-        $source = new SourceCallbackAdapter(function () {
-            throw new \DomainException('Domain error');
-        });
-
-        $adapter = new OffsetAdapter($source);
-
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Domain error');
-
-        $adapter->execute(0, 1)->fetch();
-    }
-
     public function testTypeSafety(): void
     {
         // Test that the system handles various data types correctly
@@ -162,6 +159,6 @@ class PropertyBasedTest extends TestCase
         $result = $adapter->execute(0, count($mixedData));
 
         $this->assertEquals($mixedData, $result->fetchAll());
-        $this->assertEquals(count($mixedData), $result->getTotalCount());
+        $this->assertEquals(count($mixedData), $result->getFetchedCount());
     }
 }
