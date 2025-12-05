@@ -121,8 +121,8 @@ class SourceResultCallbackAdapterTest extends TestCase
     public function testGeneratorWithComplexCallbackLogic(): void
     {
         $result = new SourceResultCallbackAdapter(function () {
-            for ($i = 0; $i < 5; $i++) {
-                if ($i === 2) {
+            for ($i = 0; 5 > $i; $i++) {
+                if (2 === $i) {
                     yield 'special_'.$i;
                 } else {
                     yield 'normal_'.$i;
@@ -173,7 +173,7 @@ class SourceResultCallbackAdapterTest extends TestCase
         $generated = [];
         foreach ($result->generator() as $item) {
             $generated[] = $item;
-            if ($item === 'second') {
+            if ('second' === $item) {
                 break; // Early termination
             }
         }

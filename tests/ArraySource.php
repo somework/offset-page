@@ -35,7 +35,7 @@ class ArraySource implements SourceInterface
     {
         $page = max(1, $page);
 
-        $data = $pageSize > 0 ?
+        $data = 0 < $pageSize ?
             array_slice($this->data, ($page - 1) * $pageSize, $pageSize) :
             [];
 

@@ -100,7 +100,7 @@ class IntegrationTest extends TestCase
         $callCount = 0;
         $source = new SourceCallbackAdapter(function () use (&$callCount) {
             $callCount++;
-            if ($callCount === 2) {
+            if (2 === $callCount) {
                 throw new \RuntimeException('API temporarily unavailable');
             }
 
@@ -123,7 +123,7 @@ class IntegrationTest extends TestCase
     {
         // Create a large dataset
         $largeData = [];
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; 10000 > $i; $i++) {
             $largeData[] = 'item_'.$i;
         }
 
@@ -144,7 +144,7 @@ class IntegrationTest extends TestCase
             $offset += $batchSize;
 
             // Check memory usage periodically
-            if ($processed % 1000 === 0) {
+            if (0 === $processed % 1000) {
                 $memoryNow = memory_get_usage();
                 // Allow reasonable memory growth but not excessive
                 $this->assertLessThan($memoryBefore + 1024 * 1024 * 5, $memoryNow); // Max 5MB increase
@@ -177,7 +177,7 @@ class IntegrationTest extends TestCase
 
         // Simulate multiple requests
         $results = [];
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; 5 > $i; $i++) {
             $result = $adapter->execute($i * 10, 10);
             $results[] = $result->fetchAll();
         }
@@ -295,7 +295,7 @@ class IntegrationTest extends TestCase
             $count++;
 
             // Simulate breaking early
-            if ($count >= 10) {
+            if (10 <= $count) {
                 break;
             }
         }
@@ -309,7 +309,7 @@ class IntegrationTest extends TestCase
         $failureCount = 0;
         $source = new SourceCallbackAdapter(function () use (&$failureCount) {
             $failureCount++;
-            if ($failureCount <= 2) {
+            if (2 >= $failureCount) {
                 throw new \RuntimeException("Temporary failure #{$failureCount}");
             }
 

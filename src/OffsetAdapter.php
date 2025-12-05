@@ -41,12 +41,13 @@ class OffsetAdapter
     {
         $this->assertArgumentsAreValid($offset, $limit, $nowCount);
 
-        if ($offset === 0 && $limit === 0 && $nowCount === 0) {
-            return new OffsetResult((function () {
-                if (false) {
-                    yield null; // generator placeholder
-                }
-            })());
+        if (0 === $offset && 0 === $limit && 0 === $nowCount) {
+            /** @return \Generator<SourceResultInterface<T>> */
+            $emptyGenerator = function () {
+                // Empty generator for zero-limit sentinel - yields nothing
+                yield from [];
+            };
+            return new OffsetResult($emptyGenerator());
         }
 
         return new OffsetResult($this->logic($offset, $limit, $nowCount));
@@ -61,16 +62,13 @@ class OffsetAdapter
         $progressNowCount = $nowCount;
 
         try {
-            while ($limit === 0 || $delivered < $limit) {
+            while (0 === $limit || $delivered < $limit) {
                 $offsetResult = Offset::logic($offset, $limit, $progressNowCount);
-                if ($offsetResult === null) {
-                    return;
-                }
 
                 $page = $offsetResult->getPage();
                 $size = $offsetResult->getSize();
 
-                if ($size <= 0) {
+                if (0 >= $size) {
                     return;
                 }
 
@@ -83,7 +81,7 @@ class OffsetAdapter
                 yield new SourceResultCallbackAdapter(
                     function () use ($generator, &$delivered, &$progressNowCount, $limit) {
                         foreach ($generator as $item) {
-                            if ($limit !== 0 && $delivered >= $limit) {
+                            if (0 !== $limit && $delivered >= $limit) {
                                 break;
                             }
 
@@ -94,7 +92,7 @@ class OffsetAdapter
                     },
                 );
 
-                if ($limit !== 0 && $delivered >= $limit) {
+                if (0 !== $limit && $delivered >= $limit) {
                     return;
                 }
             }
@@ -106,12 +104,12 @@ class OffsetAdapter
     private function assertArgumentsAreValid(int $offset, int $limit, int $nowCount): void
     {
         foreach ([['offset', $offset], ['limit', $limit], ['nowCount', $nowCount]] as [$name, $value]) {
-            if ($value < 0) {
+            if (0 > $value) {
                 throw new \InvalidArgumentException(sprintf('%s must be greater than or equal to zero.', $name));
             }
         }
 
-        if ($limit === 0 && ($offset !== 0 || $nowCount !== 0)) {
+        if (0 === $limit && (0 !== $offset || 0 !== $nowCount)) {
             throw new \InvalidArgumentException('Zero limit is only allowed when offset and nowCount are also zero.');
         }
     }

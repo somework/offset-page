@@ -67,5 +67,6 @@ return (new PhpCsFixer\Config())
         'single_line_after_imports' => true,
         'single_quote' => true,
         'visibility_required' => true,
+        'yoda_style' => ['equal' => true, 'identical' => true, 'less_and_greater' => true],
     ])
     ->setFinder($finder);

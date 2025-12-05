@@ -109,7 +109,7 @@ class PropertyBasedTest extends TestCase
         $testCases = [];
 
         // Generate various random datasets for OffsetResult testing only
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; 3 > $i; $i++) {
             $size = random_int(1, 20);
             $data = [];
             for ($j = 0; $j < $size; $j++) {

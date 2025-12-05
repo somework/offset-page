@@ -70,7 +70,7 @@ class OffsetResultTest extends TestCase
             $clone
                 ->method('generator')
                 ->willReturn($this->getGenerator(
-                    $totalCountValue > 0 ? array_fill(0, $totalCountValue, 'test') : [],
+                    0 < $totalCountValue ? array_fill(0, $totalCountValue, 'test') : [],
                 ));
             $sourceResultArray[] = $clone;
         }
@@ -281,7 +281,7 @@ class OffsetResultTest extends TestCase
             $this->assertEquals($item * 2, $processed, 'Processing simulation should work correctly');
 
             // Check memory doesn't grow excessively
-            if ($count % 50 === 0) {
+            if (0 === $count % 50) {
                 $memoryNow = memory_get_usage();
                 $this->assertLessThan($memoryBefore + 1024 * 1024, $memoryNow); // Less than 1MB increase
             }
