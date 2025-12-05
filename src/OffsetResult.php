@@ -55,12 +55,12 @@ class OffsetResult
     }
 
     /**
-         * Retrieve the next item from the internal generator.
-         *
-         * The internal generator is advanced so subsequent calls return the following items.
-         *
-         * @return T|null The next yielded value, or `null` if there are no more items.
-         */
+     * Retrieve the next item from the internal generator.
+     *
+     * The internal generator is advanced so subsequent calls return the following items.
+     *
+     * @return T|null The next yielded value, or `null` if there are no more items.
+     */
     public function fetch(): mixed
     {
         if ($this->generator->valid()) {
@@ -115,13 +115,14 @@ class OffsetResult
     }
 
     /**
-         * Flatten a generator of page generators and yield each item in sequence.
-         *
-         * Increments the instance's fetched count for every yielded item.
-         *
-         * @param \Generator<\Generator<T>> $generator Generator that yields page generators; each page generator yields items of type T.
-         * @return \Generator<T> Generator that yields items of type T from all pages in order.
-         */
+     * Flatten a generator of page generators and yield each item in sequence.
+     *
+     * Increments the instance's fetched count for every yielded item.
+     *
+     * @param \Generator<\Generator<T>> $generator Generator that yields page generators; each page generator yields items of type T.
+     *
+     * @return \Generator<T> Generator that yields items of type T from all pages in order.
+     */
     protected function execute(\Generator $generator): \Generator
     {
         foreach ($generator as $pageGenerator) {

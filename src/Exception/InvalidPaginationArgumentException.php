@@ -48,6 +48,7 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
      * @param string $parameterName The name of the invalid parameter.
      * @param mixed  $value         The provided value for the parameter.
      * @param string $description   Short description of what the parameter represents.
+     *
      * @return self An exception containing the invalid parameter and a message describing the expected value.
      */
     public static function forInvalidParameter(
@@ -73,6 +74,7 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
      * @param int $offset   The pagination offset that was provided.
      * @param int $limit    The pagination limit value (expected to be zero in this check).
      * @param int $nowCount The current count of items already paginated.
+     *
      * @return self An exception instance containing the keys `offset`, `limit`, and `nowCount` in its parameters.
      */
     public static function forInvalidZeroLimit(int $offset, int $limit, int $nowCount): self
@@ -99,6 +101,7 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
      * Retrieve the value for a named parameter stored on the exception.
      *
      * @param string $name Name of the parameter to retrieve.
+     *
      * @return mixed The parameter's value if set, or null if not present.
      */
     public function getParameter(string $name): mixed
