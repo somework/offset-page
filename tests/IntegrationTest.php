@@ -361,6 +361,7 @@ class IntegrationTest extends TestCase
             if ($startIndex >= $totalItems) {
                 // Return empty generator explicitly
                 yield from [];
+
                 return;
             }
 
