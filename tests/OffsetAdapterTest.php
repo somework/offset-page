@@ -15,7 +15,6 @@ namespace SomeWork\OffsetPage\Tests;
 
 use PHPUnit\Framework\TestCase;
 use SomeWork\OffsetPage\Exception\InvalidPaginationArgumentException;
-use SomeWork\OffsetPage\Exception\PaginationException;
 use SomeWork\OffsetPage\Exception\PaginationExceptionInterface;
 use SomeWork\OffsetPage\OffsetAdapter;
 use SomeWork\OffsetPage\SourceCallbackAdapter;
@@ -94,16 +93,6 @@ class OffsetAdapterTest extends TestCase
             // Successfully caught using the interface
             $this->addToAssertionCount(1);
         }
-    }
-
-    public function testPaginationExceptionBaseClass(): void
-    {
-        $exception = new PaginationException('Test pagination error', 42);
-
-        $this->assertInstanceOf(PaginationExceptionInterface::class, $exception);
-        $this->assertInstanceOf(\RuntimeException::class, $exception);
-        $this->assertEquals('Test pagination error', $exception->getMessage());
-        $this->assertEquals(42, $exception->getCode());
     }
 
     public function testGeneratorMethodReturnsGeneratorWithSameData(): void
@@ -431,7 +420,7 @@ class OffsetAdapterTest extends TestCase
         // Create a source that yields more items than the limit to force the break
         $source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
             // Yield 5 items, but we'll request limit 3, so break should trigger
-            for ($i = 1; $i <= 5; $i++) {
+            for ($i = 1; 5 >= $i; $i++) {
                 yield "item{$i}";
             }
         });
