@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 
 ## [2.0.0] - 2025-12-04
 
+## [2.1.0] - 2026-01-04
+
+### Changed
+- Added strict input validation to `OffsetAdapter::execute`, rejecting negative values and non-zero `limit=0` usages.
+- Introduced deterministic loop guards in the adapter to prevent infinite pagination when the logic library emits empty or zero-sized pages.
+- Documented canonical behaviors in the README, including zero-limit sentinel handling and divisor-based offset mapping.
+
+### Fixed
+- Prevented endless iteration when sources return empty data or when the logic library signals no further items.
+
 ### Added
 - Added `declare(strict_types=1)` to all source files for improved type safety
 - Added comprehensive README with usage examples and installation instructions

@@ -39,6 +39,16 @@ class OffsetAdapter
      */
     public function execute(int $offset, int $limit, int $nowCount = 0): OffsetResult
     {
+        $this->assertArgumentsAreValid($offset, $limit, $nowCount);
+
+        if ($offset === 0 && $limit === 0 && $nowCount === 0) {
+            return new OffsetResult((function () {
+                if (false) {
+                    yield null; // generator placeholder
+                }
+            })());
+        }
+
         return new OffsetResult($this->logic($offset, $limit, $nowCount));
     }
 
@@ -47,25 +57,62 @@ class OffsetAdapter
      */
     protected function logic(int $offset, int $limit, int $nowCount): \Generator
     {
+        $delivered = 0;
+        $progressNowCount = $nowCount;
+
         try {
-            while ($offsetResult = Offset::logic($offset, $limit, $nowCount)) {
-                $generator = $this->source->execute($offsetResult->getPage(), $offsetResult->getSize())->generator();
+            while ($limit === 0 || $delivered < $limit) {
+                $offsetResult = Offset::logic($offset, $limit, $progressNowCount);
+                if ($offsetResult === null) {
+                    return;
+                }
+
+                $page = $offsetResult->getPage();
+                $size = $offsetResult->getSize();
+
+                if ($size <= 0) {
+                    return;
+                }
+
+                $generator = $this->source->execute($page, $size)->generator();
 
                 if (!$generator->valid()) {
                     return;
                 }
 
                 yield new SourceResultCallbackAdapter(
-                    function () use ($generator, &$nowCount) {
+                    function () use ($generator, &$delivered, &$progressNowCount, $limit) {
                         foreach ($generator as $item) {
-                            $nowCount++;
+                            if ($limit !== 0 && $delivered >= $limit) {
+                                break;
+                            }
+
+                            $delivered++;
+                            $progressNowCount++;
                             yield $item;
                         }
                     },
                 );
+
+                if ($limit !== 0 && $delivered >= $limit) {
+                    return;
+                }
             }
         } catch (AlreadyGetNeededCountException) {
             return;
+        }
+    }
+
+    private function assertArgumentsAreValid(int $offset, int $limit, int $nowCount): void
+    {
+        foreach ([['offset', $offset], ['limit', $limit], ['nowCount', $nowCount]] as [$name, $value]) {
+            if ($value < 0) {
+                throw new \InvalidArgumentException(sprintf('%s must be greater than or equal to zero.', $name));
+            }
+        }
+
+        if ($limit === 0 && ($offset !== 0 || $nowCount !== 0)) {
+            throw new \InvalidArgumentException('Zero limit is only allowed when offset and nowCount are also zero.');
         }
     }
 }

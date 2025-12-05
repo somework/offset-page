@@ -136,8 +136,8 @@ class OffsetResultTest extends TestCase
         $offsetAdapter = new OffsetAdapter(new SourceCallbackAdapter($callback));
         $result = $offsetAdapter->execute(0, 0);
 
-        $this->assertEquals([1], $result->fetchAll());
-        $this->assertEquals(1, $result->getTotalCount());
+        $this->assertEquals([], $result->fetchAll());
+        $this->assertEquals(0, $result->getTotalCount());
     }
 
     public function testEmptyGenerator(): void
