@@ -13,12 +13,16 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
+
 /**
  * @template T
  */
 interface SourceResultInterface
 {
     /**
+     * @throws InvalidPaginationResultException
+     *
      * @return \Generator<T>
      */
     public function generator(): \Generator;

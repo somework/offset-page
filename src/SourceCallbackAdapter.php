@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
+
 /**
  * @template T
  *
@@ -28,13 +30,19 @@ class SourceCallbackAdapter implements SourceInterface
     }
 
     /**
+     * @throws InvalidPaginationResultException
+     *
      * @return SourceResultInterface<T>
      */
     public function execute(int $page, int $pageSize): SourceResultInterface
     {
         $result = call_user_func($this->callback, $page, $pageSize);
         if (!is_object($result) || !$result instanceof SourceResultInterface) {
-            throw new \UnexpectedValueException('Callback should return SourceResultInterface object');
+            throw InvalidPaginationResultException::forInvalidCallbackResult(
+                $result,
+                SourceResultInterface::class,
+                'should return SourceResultInterface object',
+            );
         }
 
         return $result;

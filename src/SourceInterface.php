@@ -13,12 +13,16 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
+
 /**
  * @template T
  */
 interface SourceInterface
 {
     /**
+     * @throws InvalidPaginationResultException
+     *
      * @return SourceResultInterface<T>
      */
     public function execute(int $page, int $pageSize): SourceResultInterface;

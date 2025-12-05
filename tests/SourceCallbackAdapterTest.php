@@ -112,8 +112,8 @@ class SourceCallbackAdapterTest extends TestCase
 
     public function testCallbackReturningNull(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Callback should return SourceResultInterface object');
+        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
+        $this->expectExceptionMessage('Callback (should return SourceResultInterface object)  must return SomeWork\OffsetPage\SourceResultInterface, got NULL');
 
         $source = new SourceCallbackAdapter(function () {
             return null;
@@ -124,8 +124,8 @@ class SourceCallbackAdapterTest extends TestCase
 
     public function testCallbackReturningArray(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Callback should return SourceResultInterface object');
+        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
+        $this->expectExceptionMessage('Callback (should return SourceResultInterface object)  must return SomeWork\OffsetPage\SourceResultInterface, got array');
 
         $source = new SourceCallbackAdapter(function () {
             return ['not', 'an', 'object'];
@@ -136,8 +136,8 @@ class SourceCallbackAdapterTest extends TestCase
 
     public function testCallbackReturningStdClass(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Callback should return SourceResultInterface object');
+        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
+        $this->expectExceptionMessage('Callback (should return SourceResultInterface object)  must return SomeWork\OffsetPage\SourceResultInterface, got stdClass');
 
         $source = new SourceCallbackAdapter(function () {
             return new \stdClass();

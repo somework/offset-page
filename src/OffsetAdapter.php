@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationArgumentException;
 use SomeWork\OffsetPage\Logic\AlreadyGetNeededCountException;
 use SomeWork\OffsetPage\Logic\Offset;
 
@@ -105,12 +106,18 @@ class OffsetAdapter
     {
         foreach ([['offset', $offset], ['limit', $limit], ['nowCount', $nowCount]] as [$name, $value]) {
             if (0 > $value) {
-                throw new \InvalidArgumentException(sprintf('%s must be greater than or equal to zero.', $name));
+                $description = match ($name) {
+                    'offset' => 'starting position in the dataset',
+                    'limit' => 'maximum number of items to return',
+                    'nowCount' => 'number of items already fetched',
+                };
+
+                throw InvalidPaginationArgumentException::forInvalidParameter($name, $value, $description);
             }
         }
 
         if (0 === $limit && (0 !== $offset || 0 !== $nowCount)) {
-            throw new \InvalidArgumentException('Zero limit is only allowed when offset and nowCount are also zero.');
+            throw InvalidPaginationArgumentException::forInvalidZeroLimit($offset, $limit, $nowCount);
         }
     }
 }

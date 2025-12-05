@@ -22,7 +22,7 @@ class OffsetResultTest extends TestCase
 {
     public function testNotSourceResultInterfaceGenerator(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
         $notSourceResultGeneratorFunction = static function () {
             yield 1;
         };
@@ -221,8 +221,8 @@ class OffsetResultTest extends TestCase
 
     public function testGeneratorYieldingNonObjects(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Result of generator is not an instance of SomeWork\OffsetPage\SourceResultInterface');
+        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
+        $this->expectExceptionMessage('Source result must be an instance of SomeWork\OffsetPage\SourceResultInterface, got string');
 
         $generator = static function () {
             yield 'not an object';
@@ -234,8 +234,8 @@ class OffsetResultTest extends TestCase
 
     public function testGeneratorYieldingInvalidObjects(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Result of generator is not an instance of SomeWork\OffsetPage\SourceResultInterface');
+        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
+        $this->expectExceptionMessage('Source result must be an instance of SomeWork\OffsetPage\SourceResultInterface, got stdClass');
 
         $generator = static function () {
             yield new \stdClass(); // Doesn't implement SourceResultInterface

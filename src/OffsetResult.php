@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
+
 /**
  * @template T
  */
@@ -45,7 +47,7 @@ class OffsetResult
     }
 
     /**
-     * @throws \UnexpectedValueException
+     * @throws InvalidPaginationResultException
      *
      * @return array<T>
      */
@@ -67,16 +69,16 @@ class OffsetResult
     }
 
     /**
-     * @throws \UnexpectedValueException
+     * @throws InvalidPaginationResultException
      */
     protected function execute(\Generator $generator): \Generator
     {
         foreach ($generator as $sourceResult) {
             if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
-                throw new \UnexpectedValueException(sprintf(
-                    'Result of generator is not an instance of %s',
+                throw InvalidPaginationResultException::forInvalidSourceResult(
+                    $sourceResult,
                     SourceResultInterface::class,
-                ));
+                );
             }
 
             foreach ($sourceResult->generator() as $result) {

@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
+
 /**
  * @template T
  *
@@ -28,13 +30,19 @@ class SourceResultCallbackAdapter implements SourceResultInterface
     }
 
     /**
+     * @throws InvalidPaginationResultException
+     *
      * @return \Generator<T>
      */
     public function generator(): \Generator
     {
         $result = call_user_func($this->callback);
         if (!$result instanceof \Generator) {
-            throw new \UnexpectedValueException('Callback result should return Generator');
+            throw InvalidPaginationResultException::forInvalidCallbackResult(
+                $result,
+                \Generator::class,
+                'result should return Generator',
+            );
         }
 
         return $result;
