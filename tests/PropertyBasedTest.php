@@ -38,8 +38,8 @@ class PropertyBasedTest extends TestCase
 
         // Add some specific edge cases
         return array_merge($testCases, [
-            'empty' => [[]],
-            'single' => [['item']],
+            'empty'    => [[]],
+            'single'   => [['item']],
             'multiple' => [range(1, 10)],
         ]);
     }

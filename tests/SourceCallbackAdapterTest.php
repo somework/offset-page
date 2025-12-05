@@ -20,8 +20,8 @@ class SourceCallbackAdapterTest extends TestCase
     public static function invalidCallbackReturnProvider(): array
     {
         return [
-            'null' => [null, 'null'],
-            'array' => [['not', 'an', 'object'], 'array'],
+            'null'     => [null, 'null'],
+            'array'    => [['not', 'an', 'object'], 'array'],
             'stdClass' => [new \stdClass(), 'stdClass'],
         ];
     }
@@ -30,8 +30,8 @@ class SourceCallbackAdapterTest extends TestCase
     {
         return [
             'various_parameters' => [5, 20, ['page5_size20'], false],
-            'zero_parameters' => [0, 0, ['zero_params'], true],
-            'large_parameters' => [1000, 5000, ['large_params'], true],
+            'zero_parameters'    => [0, 0, ['zero_params'], true],
+            'large_parameters'   => [1000, 5000, ['large_params'], true],
         ];
     }
 

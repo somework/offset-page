@@ -24,9 +24,9 @@ class InvalidPaginationResultException extends \UnexpectedValueException impleme
     /**
      * Create an exception for invalid callback result type.
      *
-     * @param mixed  $result The invalid result from callback
+     * @param mixed  $result       The invalid result from callback
      * @param string $expectedType The expected type
-     * @param string $context Additional context about where this occurred
+     * @param string $context      Additional context about where this occurred
      *
      * @return self
      */
@@ -47,7 +47,7 @@ class InvalidPaginationResultException extends \UnexpectedValueException impleme
     /**
      * Create an exception for invalid source result type.
      *
-     * @param mixed  $result The invalid result
+     * @param mixed  $result       The invalid result
      * @param string $expectedType The expected type/class
      *
      * @return self

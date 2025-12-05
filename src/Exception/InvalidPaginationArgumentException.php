@@ -26,9 +26,9 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
 
     /**
      * @param array<string, mixed> $parameters The parameter values that were provided
-     * @param string               $message The error message
-     * @param int                  $code The error code (optional)
-     * @param \Throwable|null      $previous The previous exception (optional)
+     * @param string               $message    The error message
+     * @param int                  $code       The error code (optional)
+     * @param \Throwable|null      $previous   The previous exception (optional)
      */
     public function __construct(
         array $parameters,
@@ -44,8 +44,8 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
      * Create an exception for invalid parameter values.
      *
      * @param string $parameterName The name of the invalid parameter
-     * @param mixed  $value The invalid value
-     * @param string $description Description of what the parameter represents
+     * @param mixed  $value         The invalid value
+     * @param string $description   Description of what the parameter represents
      *
      * @return self
      */
@@ -69,8 +69,8 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     /**
      * Create an exception for invalid zero limit combinations.
      *
-     * @param int $offset The offset value
-     * @param int $limit The limit value (should be 0)
+     * @param int $offset   The offset value
+     * @param int $limit    The limit value (should be 0)
      * @param int $nowCount The nowCount value
      *
      * @return self
@@ -78,8 +78,8 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     public static function forInvalidZeroLimit(int $offset, int $limit, int $nowCount): self
     {
         $parameters = [
-            'offset' => $offset,
-            'limit' => $limit,
+            'offset'   => $offset,
+            'limit'    => $limit,
             'nowCount' => $nowCount,
         ];
 
