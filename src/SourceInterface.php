@@ -40,8 +40,8 @@ interface SourceInterface
      * The generator will be consumed eagerly by the pagination system. If the generator
      * yields fewer items than requested, it signals the end of available data.
      *
-     * @param positive-int $page     1-based page number (≥1 for valid requests)
-     * @param positive-int $pageSize Maximum number of items to return (≥0, 0 means no items)
+     * @param int $page     1-based page number (≥1 for valid requests; values < 1 treated as page 1 or empty)
+     * @param int $pageSize Maximum number of items to return (≥0, 0 means no items)
      *
      * @throws \Throwable Any implementation-specific errors should be thrown directly
      *

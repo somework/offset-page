@@ -171,7 +171,7 @@ For memory-efficient processing of large result sets:
 ```php
 $result = $adapter->execute(1000, 500);
 
-while ($item = $result->fetch()) {
+while (null !== ($item = $result->fetch())) {
     processItem($item); // Process one at a time
 }
 ```

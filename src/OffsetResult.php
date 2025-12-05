@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace SomeWork\OffsetPage;
 
-use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
-
 /**
  * Result of an offset-based pagination request.
  *
@@ -66,8 +64,6 @@ class OffsetResult
     }
 
     /**
-     * @throws InvalidPaginationResultException
-     *
      * @return array<T>
      */
     public function fetchAll(): array
