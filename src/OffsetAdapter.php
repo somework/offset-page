@@ -54,20 +54,20 @@ readonly class OffsetAdapter
     /**
      * Execute pagination request with offset and limit.
      *
-     * @param int $offset Starting position (0-based)
-     * @param int $limit Maximum number of items to return
+     * @param int $offset   Starting position (0-based)
+     * @param int $limit    Maximum number of items to return
      * @param int $nowCount Current count of items already fetched (used for progress tracking in multi-request scenarios)
      *
-     * @return OffsetResult<T>
-     *
      * @throws \Throwable
+     *
+     * @return OffsetResult<T>
      */
     public function execute(int $offset, int $limit, int $nowCount = 0): OffsetResult
     {
         $this->assertArgumentsAreValid($offset, $limit, $nowCount);
 
         if (0 === $offset && 0 === $limit && 0 === $nowCount) {
-            /** @var  OffsetResult<never-return> $result */
+            /** @var OffsetResult<never-return> $result */
             $result = OffsetResult::empty();
 
             return $result;
@@ -85,9 +85,9 @@ readonly class OffsetAdapter
      * @param int $limit
      * @param int $nowCount
      *
-     * @return \Generator<T>
-     *
      * @throws \Throwable
+     *
+     * @return \Generator<T>
      */
     public function generator(int $offset, int $limit, int $nowCount = 0): \Generator
     {
@@ -103,9 +103,9 @@ readonly class OffsetAdapter
      * @param int $limit
      * @param int $nowCount
      *
-     * @return array<T>
-     *
      * @throws \Throwable
+     *
+     * @return array<T>
      */
     public function fetchAll(int $offset, int $limit, int $nowCount = 0): array
     {
@@ -113,9 +113,9 @@ readonly class OffsetAdapter
     }
 
     /**
-     * @return \Generator<\Generator<T>>
-     *
      * @throws \Throwable
+     *
+     * @return \Generator<\Generator<T>>
      */
     protected function logic(int $offset, int $limit, int $nowCount): \Generator
     {
@@ -155,8 +155,8 @@ readonly class OffsetAdapter
         foreach ([['offset', $offset], ['limit', $limit], ['nowCount', $nowCount]] as [$name, $value]) {
             if (0 > $value) {
                 $description = match ($name) {
-                    'offset' => 'starting position in the dataset',
-                    'limit' => 'maximum number of items to return',
+                    'offset'   => 'starting position in the dataset',
+                    'limit'    => 'maximum number of items to return',
                     'nowCount' => 'number of items already fetched',
                 };
 

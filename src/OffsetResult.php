@@ -46,6 +46,7 @@ class OffsetResult
     {
         /** @return \Generator<\Generator<never-return>> */
         $emptyGenerator = static fn () => yield from [];
+
         return new self($emptyGenerator());
     }
 
@@ -65,9 +66,9 @@ class OffsetResult
     }
 
     /**
-     * @return array<T>
-     *
      * @throws InvalidPaginationResultException
+     *
+     * @return array<T>
      */
     public function fetchAll(): array
     {

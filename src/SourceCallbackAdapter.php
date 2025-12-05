@@ -37,9 +37,9 @@ class SourceCallbackAdapter implements SourceInterface
     }
 
     /**
-     * @return \Generator<T>
-     *
      * @throws InvalidPaginationResultException
+     *
+     * @return \Generator<T>
      */
     public function execute(int $page, int $pageSize): \Generator
     {
