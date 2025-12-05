@@ -5,20 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.0.0.html).
 
-## [2.0.0] - 2025-12-04
+## [3.0.0] - 2025-12-05
 
-## [2.1.0] - 2026-01-04
+### Added
+
+- Added comprehensive exception architecture with typed exception hierarchy:
+  - `PaginationExceptionInterface` for type-safe exception catching
+  - `PaginationException` as base exception class
+  - `InvalidPaginationArgumentException` for parameter validation errors
+  - `InvalidPaginationResultException` for result validation errors
+- Added `OffsetAdapter::generator()` method for direct generator access
+- Added `OffsetResult::empty()` static factory for creating empty results
+- Added `OffsetResult::generator()` method for accessing internal generator
+- Added strict input validation to `OffsetAdapter::execute()`, rejecting negative values and invalid `limit=0` combinations
+- Added deterministic loop guards to prevent infinite pagination
+- Enhanced `SourceInterface` documentation with comprehensive behavioral specifications
 
 ### Changed
 
-- Added strict input validation to `OffsetAdapter::execute`, rejecting negative values and non-zero `limit=0` usages.
-- Introduced deterministic loop guards in the adapter to prevent infinite pagination when the logic library emits empty
-  or zero-sized pages.
-- Documented canonical behaviors in the README, including zero-limit sentinel handling and divisor-based offset mapping.
+- **BREAKING**: Renamed `OffsetResult::getTotalCount()` to `OffsetResult::getFetchedCount()` for semantic clarity
+- **BREAKING**: Removed `SourceResultInterface` and `SourceResultCallbackAdapter` to simplify architecture
+- **BREAKING**: `OffsetResult` no longer implements `SourceResultInterface`
+- **BREAKING**: `SourceInterface::execute()` now returns `\Generator<T>` directly instead of wrapped interface
+- Enhanced type safety with `positive-int` types in `SourceInterface` PHPDoc
+- Reorganized test methods for better logical flow and maintainability
+- Improved property visibility (changed some `protected` to `private` in `OffsetResult`)
+- Updated `SourceCallbackAdapter` with enhanced validation and error messages
+
+### Removed
+
+- Removed `SourceResultInterface` and `SourceResultCallbackAdapter` classes
+- Removed `ArraySourceResult` test utility class
+- Removed `SourceResultCallbackAdapterTest` test class
+- Removed unnecessary interface abstractions for cleaner architecture
 
 ### Fixed
 
-- Prevented endless iteration when sources return empty data or when the logic library signals no further items.
+- Fixed potential infinite loop scenarios in pagination logic
+- Enhanced error messages for better developer experience
+- Improved validation of pagination parameters
+
+### Dev
+
+- Enhanced test organization with logical method grouping
+- Added comprehensive test coverage for new exception architecture
+- Improved static analysis type safety
+- Added 31 new tests for enhanced functionality
+
+## [2.0.0] - 2025-12-04
 
 ### Added
 
@@ -37,26 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 - Updated PHPUnit to `^10.5` for PHP 8.2+ compatibility
 - Updated PHPStan to `^2.1`
 - Updated PHP-CS-Fixer to `^3.91`
-- Improved property visibility in `OffsetResult` (changed `protected` to `private`)
-- Fixed logic error in `OffsetResult::fetchAll()` method
-
-### Removed
-
-- Removed legacy CI configurations (if any existed)
-- Removed deprecated code patterns and old PHP syntax
-
-### Fixed
-
-- Fixed incorrect while loop condition in `OffsetResult::fetchAll()`
-
-### Dev
-
-- Added `ci` composer script for running all quality checks at once
-- Improved CI workflow to use consolidated quality checks
-- Enhanced Dependabot configuration with better commit message prefixes
-- Added explicit PHP version specification to PHPStan configuration
-- Improved property declarations using PHP 8.2+ features (readonly properties)
-- Added library type specification and stability settings to composer.json
 
 ### Dev
 
