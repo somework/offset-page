@@ -368,7 +368,6 @@ class OffsetAdapterTest extends TestCase
         $this->assertSame(0, $result->getFetchedCount());
     }
 
-
     public function testExecuteHandlesSourceReturningEmptyGenerator(): void
     {
         // Create a source that returns an empty generator immediately
@@ -414,5 +413,54 @@ class OffsetAdapterTest extends TestCase
         // Test fetchAll method (covers same internal methods)
         $items = $adapter->fetchAll(2, 1);
         $this->assertSame(['item3'], $items);
+    }
+
+    public function testLimitReachedInGeneratorProcessing(): void
+    {
+        // Create a source that yields more items than the limit to force the break
+        $source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
+            // Yield 5 items, but we'll request limit 3, so break should trigger
+            for ($i = 1; $i <= 5; $i++) {
+                yield "item{$i}";
+            }
+        });
+
+        $adapter = new OffsetAdapter($source);
+
+        // Request limit 3 - this should trigger the break in createLimitedGenerator
+        // when totalDelivered >= limit (line 204)
+        $result = $adapter->execute(0, 3);
+        $items = $result->fetchAll();
+
+        $this->assertSame(['item1', 'item2', 'item3'], $items);
+        $this->assertSame(3, $result->getFetchedCount());
+    }
+
+    public function testPaginationLogicWithLargeLimits(): void
+    {
+        $data = ['item1', 'item2'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        // Test with a very large limit to ensure we don't hit the limit break
+        $result = $adapter->execute(0, 100);
+        $items = $result->fetchAll();
+
+        $this->assertSame(['item1', 'item2'], $items);
+        $this->assertSame(2, $result->getFetchedCount());
+    }
+
+    public function testPaginationWithExtremeParameters(): void
+    {
+        $data = ['item1'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        // Test with parameters that might cause pagination logic to return edge cases
+        // This is an attempt to trigger the invalid page/pageSize check (line 138)
+        $result = $adapter->execute(PHP_INT_MAX - 10, 1);
+
+        // Should handle gracefully regardless of pagination logic behavior
+        $items = $result->fetchAll();
+        $this->assertIsArray($items);
+        $this->assertSame(0, $result->getFetchedCount()); // Likely no valid pages found
     }
 }
