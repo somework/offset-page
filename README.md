@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PHP Version](https://img.shields.io/packagist/php-v/somework/offset-page.svg)](https://packagist.org/packages/somework/offset-page)
 
-**Transform page-based APIs into offset-based pagination with zero hassle**
+# Transform page-based APIs into offset-based pagination with zero hassle
 
 Convert any page-based data source (APIs, databases, external services) into seamless offset-based pagination. Perfect for when your app needs "give me items 50-99" but your data source only speaks "give me page 3 with 25 items each".
 
