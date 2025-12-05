@@ -66,6 +66,9 @@ Version 3.0 introduces several breaking changes for improved architecture:
    }
    ```
 
+   > **Note**: Unlike the previous interface, generators can only be consumed once.
+   > If you need to iterate multiple times, collect results with `iterator_to_array()` first.
+
 3. Update imports:
    ```php
    // Remove these imports:
