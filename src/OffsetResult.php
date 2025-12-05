@@ -30,7 +30,11 @@ class OffsetResult
     private \Generator $generator;
 
     /**
-     * @param \Generator<\Generator<T>> $sourceResultGenerator
+     * Create an OffsetResult from a generator that yields page generators.
+     *
+     * The provided generator must yield per-page generators whose values are items of type T; the constructor stores an internal generator that will iterate items across all pages in sequence. The internal generator can be consumed only once.
+     *
+     * @param \Generator<\Generator<T>> $sourceResultGenerator Generator that yields per-page generators of items of type T.
      */
     public function __construct(\Generator $sourceResultGenerator)
     {
@@ -38,7 +42,9 @@ class OffsetResult
     }
 
     /**
-     * @return OffsetResult<T>
+     * Create an OffsetResult that yields no items.
+     *
+     * @return OffsetResult<T> An OffsetResult containing zero elements.
      */
     public static function empty(): self
     {
@@ -49,8 +55,12 @@ class OffsetResult
     }
 
     /**
-     * @return T|null
-     */
+         * Retrieve the next item from the internal generator.
+         *
+         * The internal generator is advanced so subsequent calls return the following items.
+         *
+         * @return T|null The next yielded value, or `null` if there are no more items.
+         */
     public function fetch(): mixed
     {
         if ($this->generator->valid()) {
@@ -64,7 +74,11 @@ class OffsetResult
     }
 
     /**
-     * @return array<T>
+     * Retrieve all remaining items from the internal generator as an array.
+     *
+     * Consuming the returned items advances the internal generator until it is exhausted.
+     *
+     * @return array<T> An array containing every remaining yielded item; empty if none remain.
      */
     public function fetchAll(): array
     {
@@ -79,28 +93,35 @@ class OffsetResult
     }
 
     /**
-     * Returns the internal generator for advanced use cases.
+     * Get the internal generator used to stream paginated items.
      *
-     * Warning: The generator can only be consumed once. After calling
-     * fetch(), fetchAll(), or iterating this generator, it will be exhausted.
+     * The returned generator can be consumed only once; calling fetch(), fetchAll(), or iterating the generator will exhaust it.
      *
-     * @return \Generator<T>
+     * @return \Generator<T> The internal generator that yields items of type T.
      */
     public function generator(): \Generator
     {
         return $this->generator;
     }
 
+    /**
+     * Number of items fetched so far.
+     *
+     * @return int The count of items that have been retrieved from the internal generator.
+     */
     public function getFetchedCount(): int
     {
         return $this->fetchedCount;
     }
 
     /**
-     * @param \Generator<\Generator<T>> $generator
-     *
-     * @return \Generator<T>
-     */
+         * Flatten a generator of page generators and yield each item in sequence.
+         *
+         * Increments the instance's fetched count for every yielded item.
+         *
+         * @param \Generator<\Generator<T>> $generator Generator that yields page generators; each page generator yields items of type T.
+         * @return \Generator<T> Generator that yields items of type T from all pages in order.
+         */
     protected function execute(\Generator $generator): \Generator
     {
         foreach ($generator as $pageGenerator) {

@@ -25,10 +25,12 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     private array $parameters;
 
     /**
-     * @param array<string, mixed> $parameters The parameter values that were provided
-     * @param string               $message    The error message
-     * @param int                  $code       The error code (optional)
-     * @param \Throwable|null      $previous   The previous exception (optional)
+     * Create a new InvalidPaginationArgumentException containing the parameter values that caused the error.
+     *
+     * @param array<string, mixed> $parameters Associative map of parameter names to the values that triggered the exception.
+     * @param string               $message    Human-readable error message.
+     * @param int                  $code       Optional error code.
+     * @param \Throwable|null      $previous   Optional previous exception for chaining.
      */
     public function __construct(
         array $parameters,
@@ -41,13 +43,12 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     }
 
     /**
-     * Create an exception for invalid parameter values.
+     * Create an exception representing a single invalid pagination parameter.
      *
-     * @param string $parameterName The name of the invalid parameter
-     * @param mixed  $value         The invalid value
-     * @param string $description   Description of what the parameter represents
-     *
-     * @return self
+     * @param string $parameterName The name of the invalid parameter.
+     * @param mixed  $value         The provided value for the parameter.
+     * @param string $description   Short description of what the parameter represents.
+     * @return self An exception containing the invalid parameter and a message describing the expected value.
      */
     public static function forInvalidParameter(
         string $parameterName,
@@ -67,13 +68,12 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     }
 
     /**
-     * Create an exception for invalid zero limit combinations.
+     * Create an exception describing an invalid combination where `limit` is zero but `offset` or `nowCount` are non-zero.
      *
-     * @param int $offset   The offset value
-     * @param int $limit    The limit value (should be 0)
-     * @param int $nowCount The nowCount value
-     *
-     * @return self
+     * @param int $offset   The pagination offset that was provided.
+     * @param int $limit    The pagination limit value (expected to be zero in this check).
+     * @param int $nowCount The current count of items already paginated.
+     * @return self An exception instance containing the keys `offset`, `limit`, and `nowCount` in its parameters.
      */
     public static function forInvalidZeroLimit(int $offset, int $limit, int $nowCount): self
     {
@@ -96,11 +96,10 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     }
 
     /**
-     * Get a specific parameter value.
+     * Retrieve the value for a named parameter stored on the exception.
      *
-     * @param string $name The parameter name
-     *
-     * @return mixed The parameter value, or null if not set
+     * @param string $name Name of the parameter to retrieve.
+     * @return mixed The parameter's value if set, or null if not present.
      */
     public function getParameter(string $name): mixed
     {

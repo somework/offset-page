@@ -45,12 +45,12 @@ class InvalidPaginationResultException extends \UnexpectedValueException impleme
     }
 
     /**
-     * Create an exception for invalid source result type.
+     * Create an exception representing a source result type mismatch.
      *
-     * @param mixed  $result       The invalid result
-     * @param string $expectedType The expected type/class
+     * @param mixed  $result       The value returned by the source.
+     * @param string $expectedType The expected class or type name.
      *
-     * @return self
+     * @return self An exception instance describing the expected and actual types.
      */
     public static function forInvalidSourceResult(mixed $result, string $expectedType): self
     {
