@@ -87,6 +87,7 @@ class OffsetAdapterTest extends TestCase
         $counter = 0;
         $callback = function (int $page, int $size) use (&$counter) {
             $counter++;
+
             return new ArraySourceResult(range(1, $size));
         };
 
