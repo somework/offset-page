@@ -30,16 +30,22 @@ use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
 class SourceCallbackAdapter implements SourceInterface
 {
     /**
-     * @param callable(int, int): \Generator<T> $callback
+     * Wraps a callable data source for use as a SourceInterface implementation.
+     *
+     * @param callable(int, int): \Generator<T> $callback A callable that accepts the 1-based page number and page size, and yields items of type `T`.
      */
     public function __construct(private $callback)
     {
     }
 
     /**
-     * @throws InvalidPaginationResultException
+     * Invoke the configured callback to produce a page of results as a Generator.
      *
-     * @return \Generator<T>
+     * Calls the adapter's callback with the provided page and page size and returns the resulting Generator.
+     *
+     * @throws InvalidPaginationResultException If the callback does not return a `\Generator`.
+     *
+     * @return \Generator<T> A Generator that yields page results of type `T`.
      */
     public function execute(int $page, int $pageSize): \Generator
     {
