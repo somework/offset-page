@@ -10,14 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 ## [2.1.0] - 2026-01-04
 
 ### Changed
+
 - Added strict input validation to `OffsetAdapter::execute`, rejecting negative values and non-zero `limit=0` usages.
-- Introduced deterministic loop guards in the adapter to prevent infinite pagination when the logic library emits empty or zero-sized pages.
+- Introduced deterministic loop guards in the adapter to prevent infinite pagination when the logic library emits empty
+  or zero-sized pages.
 - Documented canonical behaviors in the README, including zero-limit sentinel handling and divisor-based offset mapping.
 
 ### Fixed
+
 - Prevented endless iteration when sources return empty data or when the logic library signals no further items.
 
 ### Added
+
 - Added `declare(strict_types=1)` to all source files for improved type safety
 - Added comprehensive README with usage examples and installation instructions
 - Added PHP version badge to README
@@ -27,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 - Added PHP-CS-Fixer code style configuration
 
 ### Changed
+
 - **BREAKING**: Updated minimum PHP version requirement from 7.4 to 8.2
 - **BREAKING**: Updated `somework/offset-page-logic` dependency to `^2.0` (major version update)
 - Updated PHPUnit to `^10.5` for PHP 8.2+ compatibility
@@ -36,13 +41,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 - Fixed logic error in `OffsetResult::fetchAll()` method
 
 ### Removed
+
 - Removed legacy CI configurations (if any existed)
 - Removed deprecated code patterns and old PHP syntax
 
 ### Fixed
+
 - Fixed incorrect while loop condition in `OffsetResult::fetchAll()`
 
 ### Dev
+
 - Added `ci` composer script for running all quality checks at once
 - Improved CI workflow to use consolidated quality checks
 - Enhanced Dependabot configuration with better commit message prefixes
@@ -51,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/spec2.
 - Added library type specification and stability settings to composer.json
 
 ### Dev
+
 - Migrated from Travis CI to GitHub Actions
 - Added comprehensive CI pipeline with tests, static analysis, and code style checks
 - Added composer scripts: `test`, `stan`, `cs-check`, `cs-fix`

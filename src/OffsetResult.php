@@ -20,11 +20,11 @@ use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
  */
 class OffsetResult
 {
-    private int $totalCount = 0;
+    private int $fetchedCount = 0;
     private \Generator $generator;
 
     /**
-     * @param \Generator<SourceResultInterface<T>> $sourceResultGenerator
+     * @param \Generator<\Generator<T>> $sourceResultGenerator
      */
     public function __construct(\Generator $sourceResultGenerator)
     {
@@ -32,9 +32,19 @@ class OffsetResult
     }
 
     /**
+     * @return OffsetResult<T>
+     */
+    public static function empty(): self
+    {
+        /** @return \Generator<\Generator<never-return>> */
+        $emptyGenerator = static fn () => yield from [];
+        return new self($emptyGenerator());
+    }
+
+    /**
      * @return T|null
      */
-    public function fetch()
+    public function fetch(): mixed
     {
         if ($this->generator->valid()) {
             $value = $this->generator->current();
@@ -47,9 +57,9 @@ class OffsetResult
     }
 
     /**
-     * @throws InvalidPaginationResultException
-     *
      * @return array<T>
+     *
+     * @throws InvalidPaginationResultException
      */
     public function fetchAll(): array
     {
@@ -63,26 +73,29 @@ class OffsetResult
         return $result;
     }
 
-    public function getTotalCount(): int
+    /**
+     * @return \Generator<T>
+     */
+    public function generator(): \Generator
     {
-        return $this->totalCount;
+        return $this->generator;
+    }
+
+    public function getFetchedCount(): int
+    {
+        return $this->fetchedCount;
     }
 
     /**
-     * @throws InvalidPaginationResultException
+     * @param \Generator<\Generator<T>> $generator
+     *
+     * @return \Generator<T>
      */
     protected function execute(\Generator $generator): \Generator
     {
-        foreach ($generator as $sourceResult) {
-            if (!is_object($sourceResult) || !($sourceResult instanceof SourceResultInterface)) {
-                throw InvalidPaginationResultException::forInvalidSourceResult(
-                    $sourceResult,
-                    SourceResultInterface::class,
-                );
-            }
-
-            foreach ($sourceResult->generator() as $result) {
-                $this->totalCount++;
+        foreach ($generator as $pageGenerator) {
+            foreach ($pageGenerator as $result) {
+                $this->fetchedCount++;
                 yield $result;
             }
         }

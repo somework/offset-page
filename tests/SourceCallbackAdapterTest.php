@@ -12,23 +12,27 @@
 namespace SomeWork\OffsetPage\Tests;
 
 use PHPUnit\Framework\TestCase;
+use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
 use SomeWork\OffsetPage\SourceCallbackAdapter;
 
 class SourceCallbackAdapterTest extends TestCase
 {
-    public function testGood(): void
+    public static function invalidCallbackReturnProvider(): array
     {
-        $source = new SourceCallbackAdapter(function () {
-            return new ArraySourceResult([1, 2, 3, 4, 5], 5);
-        });
+        return [
+            'null' => [null, 'null'],
+            'array' => [['not', 'an', 'object'], 'array'],
+            'stdClass' => [new \stdClass(), 'stdClass'],
+        ];
+    }
 
-        $result = $source->execute(0, 0);
-
-        $data = [];
-        foreach ($result->generator() as $item) {
-            $data[] = $item;
-        }
-        $this->assertEquals([1, 2, 3, 4, 5], $data);
+    public static function parameterTestProvider(): array
+    {
+        return [
+            'various_parameters' => [5, 20, ['page5_size20'], false],
+            'zero_parameters' => [0, 0, ['zero_params'], true],
+            'large_parameters' => [1000, 5000, ['large_params'], true],
+        ];
     }
 
     public function testBad(): void
@@ -41,106 +45,31 @@ class SourceCallbackAdapterTest extends TestCase
         $source->execute(0, 0);
     }
 
-    public function testExecuteWithVariousParameters(): void
+    public function testCallbackReturningEmptyResult(): void
     {
-        $source = new SourceCallbackAdapter(function (int $page, int $size) {
-            return new ArraySourceResult(["page{$page}_size{$size}"], 1);
-        });
-
-        $result = $source->execute(5, 20);
-        $data = [];
-        foreach ($result->generator() as $item) {
-            $data[] = $item;
-        }
-
-        $this->assertEquals(['page5_size20'], $data);
-    }
-
-    public function testExecuteWithZeroPageAndSize(): void
-    {
-        $source = new SourceCallbackAdapter(function (int $page, int $size) {
-            $this->assertEquals(0, $page);
-            $this->assertEquals(0, $size);
-
-            return new ArraySourceResult(['zero_params'], 1);
-        });
-
-        $result = $source->execute(0, 0);
-        $data = [];
-        foreach ($result->generator() as $item) {
-            $data[] = $item;
-        }
-
-        $this->assertEquals(['zero_params'], $data);
-    }
-
-    public function testExecuteWithLargeParameters(): void
-    {
-        $source = new SourceCallbackAdapter(function (int $page, int $size) {
-            $this->assertEquals(1000, $page);
-            $this->assertEquals(5000, $size);
-
-            return new ArraySourceResult(['large_params'], 1);
-        });
-
-        $result = $source->execute(1000, 5000);
-        $data = [];
-        foreach ($result->generator() as $item) {
-            $data[] = $item;
-        }
-
-        $this->assertEquals(['large_params'], $data);
-    }
-
-    public function testExecuteWithNegativeParameters(): void
-    {
-        $source = new SourceCallbackAdapter(function (int $page, int $size) {
-            $this->assertEquals(-1, $page);
-            $this->assertEquals(-10, $size);
-
-            return new ArraySourceResult(['negative_params'], 1);
-        });
-
-        $result = $source->execute(-1, -10);
-        $data = [];
-        foreach ($result->generator() as $item) {
-            $data[] = $item;
-        }
-
-        $this->assertEquals(['negative_params'], $data);
-    }
-
-    public function testCallbackReturningNull(): void
-    {
-        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
-        $this->expectExceptionMessage('Callback (should return SourceResultInterface object)  must return SomeWork\OffsetPage\SourceResultInterface, got NULL');
-
         $source = new SourceCallbackAdapter(function () {
-            return null;
+            yield from [];
         });
 
-        $source->execute(1, 1);
+        $result = $source->execute(1, 10);
+        $data = [];
+        foreach ($result as $item) {
+            $data[] = $item;
+        }
+
+        $this->assertEquals([], $data);
     }
 
-    public function testCallbackReturningArray(): void
+    /**
+     * @dataProvider invalidCallbackReturnProvider
+     */
+    public function testCallbackReturningInvalidType($invalidValue, string $expectedType): void
     {
-        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
-        $this->expectExceptionMessage('Callback (should return SourceResultInterface object)  must return SomeWork\OffsetPage\SourceResultInterface, got array');
+        $this->expectException(InvalidPaginationResultException::class);
+        $this->expectExceptionMessage("Callback (should return Generator) must return Generator, got $expectedType");
 
-        $source = new SourceCallbackAdapter(function () {
-            return ['not', 'an', 'object'];
-        });
-
-        $source->execute(1, 1);
-    }
-
-    public function testCallbackReturningStdClass(): void
-    {
-        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
-        $this->expectExceptionMessage('Callback (should return SourceResultInterface object)  must return SomeWork\OffsetPage\SourceResultInterface, got stdClass');
-
-        $source = new SourceCallbackAdapter(function () {
-            return new \stdClass();
+        $source = new SourceCallbackAdapter(function () use ($invalidValue) {
+            return $invalidValue;
         });
 
         $source->execute(1, 1);
@@ -163,19 +92,16 @@ class SourceCallbackAdapterTest extends TestCase
         $callCount = 0;
         $source = new SourceCallbackAdapter(function (int $page, int $size) use (&$callCount) {
             $callCount++;
-            $data = [];
 
             // Simulate pagination logic
             for ($i = 0; $i < $size; $i++) {
-                $data[] = "page{$page}_item".($i + 1);
+                yield "page{$page}_item".($i + 1);
             }
-
-            return new ArraySourceResult($data, 100); // Total of 100 items
         });
 
         $result = $source->execute(2, 3);
         $data = [];
-        foreach ($result->generator() as $item) {
+        foreach ($result as $item) {
             $data[] = $item;
         }
 
@@ -183,19 +109,68 @@ class SourceCallbackAdapterTest extends TestCase
         $this->assertEquals(1, $callCount);
     }
 
-    public function testCallbackReturningEmptyResult(): void
+    public function testExecuteWithNegativeParameters(): void
     {
-        $source = new SourceCallbackAdapter(function () {
-            return new ArraySourceResult([], 0);
+        $source = new SourceCallbackAdapter(function (int $page, int $size) {
+            $this->assertEquals(-1, $page);
+            $this->assertEquals(-10, $size);
+
+            yield 'negative_params';
         });
 
-        $result = $source->execute(1, 10);
+        $result = $source->execute(-1, -10);
         $data = [];
-        foreach ($result->generator() as $item) {
+        foreach ($result as $item) {
             $data[] = $item;
         }
 
-        $this->assertEquals([], $data);
+        $this->assertEquals(['negative_params'], $data);
+    }
+
+    /**
+     * @dataProvider parameterTestProvider
+     */
+    public function testExecuteWithParameters(int $page, int $size, array $expectedResult, bool $assertParameters): void
+    {
+        $source = new SourceCallbackAdapter(
+            function (int $callbackPage, int $callbackSize) use ($page, $size, $assertParameters) {
+                if ($assertParameters) {
+                    $this->assertEquals($page, $callbackPage);
+                    $this->assertEquals($size, $callbackSize);
+                }
+
+                if (5 === $page && 20 === $size) {
+                    yield "page{$callbackPage}_size$callbackSize";
+                } elseif (0 === $page && 0 === $size) {
+                    yield 'zero_params';
+                } elseif (1000 === $page && 5000 === $size) {
+                    yield 'large_params';
+                }
+            },
+        );
+
+        $result = $source->execute($page, $size);
+        $data = [];
+        foreach ($result as $item) {
+            $data[] = $item;
+        }
+
+        $this->assertEquals($expectedResult, $data);
+    }
+
+    public function testGood(): void
+    {
+        $source = new SourceCallbackAdapter(function () {
+            yield from [1, 2, 3, 4, 5];
+        });
+
+        $result = $source->execute(0, 0);
+
+        $data = [];
+        foreach ($result as $item) {
+            $data[] = $item;
+        }
+        $this->assertEquals([1, 2, 3, 4, 5], $data);
     }
 
     public function testMultipleExecuteCalls(): void
@@ -204,20 +179,20 @@ class SourceCallbackAdapterTest extends TestCase
         $source = new SourceCallbackAdapter(function (int $page, int $size) use (&$callLog) {
             $callLog[] = ['page' => $page, 'size' => $size];
 
-            return new ArraySourceResult(['call_'.count($callLog)], 1);
+            yield 'call_'.count($callLog);
         });
 
         // First call
         $result1 = $source->execute(1, 5);
         $data1 = [];
-        foreach ($result1->generator() as $item) {
+        foreach ($result1 as $item) {
             $data1[] = $item;
         }
 
         // Second call
         $result2 = $source->execute(2, 10);
         $data2 = [];
-        foreach ($result2->generator() as $item) {
+        foreach ($result2 as $item) {
             $data2[] = $item;
         }
 

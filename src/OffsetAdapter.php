@@ -20,80 +20,84 @@ use SomeWork\OffsetPage\Logic\Offset;
 /**
  * @template T
  */
-class OffsetAdapter
+readonly class OffsetAdapter
 {
     /**
      * @param SourceInterface<T> $source
      */
-    public function __construct(protected readonly SourceInterface $source)
+    public function __construct(protected SourceInterface $source)
     {
     }
 
     /**
      * Execute pagination request with offset and limit.
      *
-     * @param int $offset   Starting position (0-based)
-     * @param int $limit    Maximum number of items to return
+     * @param int $offset Starting position (0-based)
+     * @param int $limit Maximum number of items to return
      * @param int $nowCount Current count of items already fetched (used for progress tracking in multi-request scenarios)
      *
      * @return OffsetResult<T>
+     *
+     * @throws \Throwable
      */
     public function execute(int $offset, int $limit, int $nowCount = 0): OffsetResult
     {
         $this->assertArgumentsAreValid($offset, $limit, $nowCount);
 
         if (0 === $offset && 0 === $limit && 0 === $nowCount) {
-            /** @return \Generator<SourceResultInterface<T>> */
-            $emptyGenerator = function () {
-                // Empty generator for zero-limit sentinel - yields nothing
-                yield from [];
-            };
-            return new OffsetResult($emptyGenerator());
+            /** @var  OffsetResult<never-return> $result */
+            $result = OffsetResult::empty();
+
+            return $result;
         }
 
         return new OffsetResult($this->logic($offset, $limit, $nowCount));
     }
 
     /**
-     * @return \Generator<SourceResultInterface<T>>
+     * @param int $offset
+     * @param int $limit
+     * @param int $nowCount
+     *
+     * @return \Generator<T>
+     *
+     * @throws \Throwable
+     */
+    public function generator(int $offset, int $limit, int $nowCount = 0): \Generator
+    {
+        return $this->execute($offset, $limit, $nowCount)->generator();
+    }
+
+    /**
+     * @return \Generator<\Generator<T>>
+     *
+     * @throws \Throwable
      */
     protected function logic(int $offset, int $limit, int $nowCount): \Generator
     {
-        $delivered = 0;
-        $progressNowCount = $nowCount;
+        $totalDelivered = 0;
+        $currentNowCount = $nowCount;
 
         try {
-            while (0 === $limit || $delivered < $limit) {
-                $offsetResult = Offset::logic($offset, $limit, $progressNowCount);
+            while ($this->shouldContinuePagination($limit, $totalDelivered)) {
+                $paginationRequest = Offset::logic($offset, $limit, $currentNowCount);
 
-                $page = $offsetResult->getPage();
-                $size = $offsetResult->getSize();
+                $page = $paginationRequest->getPage();
+                $pageSize = $paginationRequest->getSize();
 
-                if (0 >= $size) {
+                if (0 >= $page || 0 >= $pageSize) {
                     return;
                 }
 
-                $generator = $this->source->execute($page, $size)->generator();
+                $pageData = $this->source->execute($page, $pageSize);
 
-                if (!$generator->valid()) {
+                if (!$pageData->valid()) {
                     return;
                 }
 
-                yield new SourceResultCallbackAdapter(
-                    function () use ($generator, &$delivered, &$progressNowCount, $limit) {
-                        foreach ($generator as $item) {
-                            if (0 !== $limit && $delivered >= $limit) {
-                                break;
-                            }
+                yield $this->createLimitedGenerator($pageData, $limit, $totalDelivered, $currentNowCount);
 
-                            $delivered++;
-                            $progressNowCount++;
-                            yield $item;
-                        }
-                    },
-                );
-
-                if (0 !== $limit && $delivered >= $limit) {
+                if (0 !== $limit && $totalDelivered >= $limit) {
                     return;
                 }
             }
@@ -119,5 +123,33 @@ class OffsetAdapter
         if (0 === $limit && (0 !== $offset || 0 !== $nowCount)) {
             throw InvalidPaginationArgumentException::forInvalidZeroLimit($offset, $limit, $nowCount);
         }
+    }
+
+    /**
+     * Create a generator that respects the overall limit.
+     */
+    private function createLimitedGenerator(
+        \Generator $sourceGenerator,
+        int $limit,
+        int &$totalDelivered,
+        int &$currentNowCount,
+    ): \Generator {
+        foreach ($sourceGenerator as $item) {
+            if (0 !== $limit && $totalDelivered >= $limit) {
+                break;
+            }
+
+            $totalDelivered++;
+            $currentNowCount++;
+            yield $item;
+        }
+    }
+
+    /**
+     * Determine if pagination should continue.
+     */
+    private function shouldContinuePagination(int $limit, int $delivered): bool
+    {
+        return 0 === $limit || $delivered < $limit;
     }
 }

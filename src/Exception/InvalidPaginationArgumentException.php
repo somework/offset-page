@@ -26,9 +26,9 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
 
     /**
      * @param array<string, mixed> $parameters The parameter values that were provided
-     * @param string $message The error message
-     * @param int $code The error code (optional)
-     * @param \Throwable|null $previous The previous exception (optional)
+     * @param string               $message The error message
+     * @param int                  $code The error code (optional)
+     * @param \Throwable|null      $previous The previous exception (optional)
      */
     public function __construct(
         array $parameters,
@@ -41,32 +41,10 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
     }
 
     /**
-     * Get the parameter values that caused this exception.
-     *
-     * @return array<string, mixed>
-     */
-    public function getParameters(): array
-    {
-        return $this->parameters;
-    }
-
-    /**
-     * Get a specific parameter value.
-     *
-     * @param string $name The parameter name
-     *
-     * @return mixed The parameter value, or null if not set
-     */
-    public function getParameter(string $name): mixed
-    {
-        return $this->parameters[$name] ?? null;
-    }
-
-    /**
      * Create an exception for invalid parameter values.
      *
      * @param string $parameterName The name of the invalid parameter
-     * @param mixed $value The invalid value
+     * @param mixed  $value The invalid value
      * @param string $description Description of what the parameter represents
      *
      * @return self
@@ -106,8 +84,8 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
         ];
 
         $message = sprintf(
-            'Zero limit is only allowed when both offset and nowCount are also zero (current: offset=%d, limit=%d, nowCount=%d). ' .
-            'Zero limit indicates "fetch all remaining items" and can only be used at the start of pagination. ' .
+            'Zero limit is only allowed when both offset and nowCount are also zero (current: offset=%d, limit=%d, nowCount=%d). '.
+            'Zero limit indicates "fetch all remaining items" and can only be used at the start of pagination. '.
             'For unlimited fetching, use a very large limit value instead.',
             $offset,
             $limit,
@@ -115,5 +93,27 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
         );
 
         return new self($parameters, $message);
+    }
+
+    /**
+     * Get a specific parameter value.
+     *
+     * @param string $name The parameter name
+     *
+     * @return mixed The parameter value, or null if not set
+     */
+    public function getParameter(string $name): mixed
+    {
+        return $this->parameters[$name] ?? null;
+    }
+
+    /**
+     * Get the parameter values that caused this exception.
+     *
+     * @return array<string, mixed>
+     */
+    public function getParameters(): array
+    {
+        return $this->parameters;
     }
 }

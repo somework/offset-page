@@ -23,25 +23,25 @@ use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
 class SourceCallbackAdapter implements SourceInterface
 {
     /**
-     * @param callable(int, int): SourceResultInterface<T> $callback
+     * @param callable(int, int): \Generator<T> $callback
      */
     public function __construct(private $callback)
     {
     }
 
     /**
-     * @throws InvalidPaginationResultException
+     * @return \Generator<T>
      *
-     * @return SourceResultInterface<T>
+     * @throws InvalidPaginationResultException
      */
-    public function execute(int $page, int $pageSize): SourceResultInterface
+    public function execute(int $page, int $pageSize): \Generator
     {
         $result = call_user_func($this->callback, $page, $pageSize);
-        if (!is_object($result) || !$result instanceof SourceResultInterface) {
+        if (!$result instanceof \Generator) {
             throw InvalidPaginationResultException::forInvalidCallbackResult(
                 $result,
-                SourceResultInterface::class,
-                'should return SourceResultInterface object',
+                \Generator::class,
+                'should return Generator',
             );
         }
 

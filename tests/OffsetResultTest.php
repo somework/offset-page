@@ -16,97 +16,37 @@ use PHPUnit\Framework\TestCase;
 use SomeWork\OffsetPage\OffsetAdapter;
 use SomeWork\OffsetPage\OffsetResult;
 use SomeWork\OffsetPage\SourceCallbackAdapter;
-use SomeWork\OffsetPage\SourceResultInterface;
 
 class OffsetResultTest extends TestCase
 {
-    public function testNotSourceResultInterfaceGenerator(): void
-    {
-        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
-        $notSourceResultGeneratorFunction = static function () {
-            yield 1;
-        };
-
-        $offsetResult = new OffsetResult($notSourceResultGeneratorFunction());
-        $offsetResult->fetch();
-    }
-
-    public function testTotalCount(): void
-    {
-        $sourceResult = $this
-            ->getMockBuilder(SourceResultInterface::class)
-            ->onlyMethods(['generator'])
-            ->getMock();
-
-        $sourceResult
-            ->method('generator')
-            ->willReturn($this->getGenerator(['test']));
-
-        $offsetResult = new OffsetResult($this->getGenerator([$sourceResult]));
-        $this->assertEquals(0, $offsetResult->getTotalCount());
-        $offsetResult->fetchAll();
-
-        $this->assertEquals(1, $offsetResult->getTotalCount());
-    }
-
-    protected function getGenerator(array $value): \Generator
-    {
-        foreach ($value as $item) {
-            yield $item;
-        }
-    }
-
-    #[DataProvider('totalCountProvider')]
-    public function testTotalCountNotChanged(array $totalCountValues, int $expectsCount): void
-    {
-        $sourceResult = $this
-            ->getMockBuilder(SourceResultInterface::class)
-            ->onlyMethods(['generator'])
-            ->getMock();
-
-        $sourceResultArray = [];
-        foreach ($totalCountValues as $totalCountValue) {
-            $clone = clone $sourceResult;
-            $clone
-                ->method('generator')
-                ->willReturn($this->getGenerator(
-                    0 < $totalCountValue ? array_fill(0, $totalCountValue, 'test') : [],
-                ));
-            $sourceResultArray[] = $clone;
-        }
-
-        $offsetResult = new OffsetResult($this->getGenerator($sourceResultArray));
-        $offsetResult->fetchAll();
-        $this->assertEquals($expectsCount, $offsetResult->getTotalCount());
-    }
-
-    public static function totalCountProvider(): array
+    public static function complexFetchScenariosProvider(): array
     {
         return [
-            [
-                [8, 9, 10],
-                27,
+            'single_source_single_item' => [
+                [
+                    (static fn () => yield from ['item'])(),
+                ],
+                ['item'],
+                1,
             ],
-            [
-                [],
-                0,
+            'multiple_sources_same_count' => [
+                [
+                    (static fn () => yield from ['a1', 'a2'])(),
+                    (static fn () => yield from ['b1', 'b2'])(),
+                ],
+                ['a1', 'a2', 'b1', 'b2'],
+                4,
             ],
-            [
-                [20, 0, 10],
-                30,
-            ],
-            [
-                [-1, -10],
-                0,
+            'empty_sources_mixed_with_data' => [
+                [
+                    (static fn () => yield from [])(),
+                    (static fn () => yield from ['data'])(),
+                    (static fn () => yield from [])(),
+                ],
+                ['data'],
+                1,
             ],
         ];
-    }
-
-    #[DataProvider('fetchedCountProvider')]
-    public function testFetchedCount(array $sources, array $expectedResult): void
-    {
-        $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $this->assertEquals($expectedResult, $offsetResult->fetchAll());
     }
 
     public static function fetchedCountProvider(): array
@@ -114,14 +54,78 @@ class OffsetResultTest extends TestCase
         return [
             [
 
-                'sources'        => [
-                    new ArraySourceResult([0], 3),
-                    new ArraySourceResult([1], 3),
-                    new ArraySourceResult([2], 3),
+                'sources' => [
+                    (static fn () => yield from [0])(),
+                    (static fn () => yield from [1])(),
+                    (static fn () => yield from [2])(),
                 ],
                 'expectedResult' => [0, 1, 2],
             ],
         ];
+    }
+
+    #[DataProvider('complexFetchScenariosProvider')]
+    public function testComplexFetchScenarios(array $sources, array $expectedResults, int $expectedTotalCount): void
+    {
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+
+        $this->assertEquals($expectedResults, $offsetResult->fetchAll());
+        $this->assertEquals($expectedTotalCount, $offsetResult->getFetchedCount());
+    }
+
+    public function testEmptyGenerator(): void
+    {
+        $emptyGenerator = static function () {
+            yield from [];
+        };
+
+        $offsetResult = new OffsetResult($emptyGenerator());
+        $this->assertEquals([], $offsetResult->fetchAll());
+        $this->assertEquals(0, $offsetResult->getFetchedCount());
+    }
+
+    public function testEmptySourceResultInMiddleOfGenerator(): void
+    {
+        $sources = [
+            $this->getGenerator(['first']),
+            $this->getGenerator([]),
+            $this->getGenerator(['second', 'third']),
+        ];
+
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+        $this->assertEquals(['first', 'second', 'third'], $offsetResult->fetchAll());
+        $this->assertEquals(3, $offsetResult->getFetchedCount());
+    }
+
+    public function testEmptyStaticFactory(): void
+    {
+        $emptyResult = OffsetResult::empty();
+
+        $this->assertEquals([], $emptyResult->fetchAll());
+        $this->assertEquals(0, $emptyResult->getFetchedCount());
+        $this->assertNull($emptyResult->fetch());
+    }
+
+    public function testEmptyStaticFactoryGeneratorMethod(): void
+    {
+        $emptyResult = OffsetResult::empty();
+
+        $generator = $emptyResult->generator();
+
+        $this->assertEquals([], iterator_to_array($generator));
+    }
+
+    public function testEmptyStaticFactoryMultipleCalls(): void
+    {
+        $empty1 = OffsetResult::empty();
+        $empty2 = OffsetResult::empty();
+
+        // Should be different instances but behave identically
+        $this->assertNotSame($empty1, $empty2);
+        $this->assertEquals([], $empty1->fetchAll());
+        $this->assertEquals([], $empty2->fetchAll());
+        $this->assertEquals(0, $empty1->getFetchedCount());
+        $this->assertEquals(0, $empty2->getFetchedCount());
     }
 
     /**
@@ -130,64 +134,20 @@ class OffsetResultTest extends TestCase
     public function testError(): void
     {
         $callback = function () {
-            return new ArraySourceResult([1]);
+            yield 1;
         };
 
         $offsetAdapter = new OffsetAdapter(new SourceCallbackAdapter($callback));
         $result = $offsetAdapter->execute(0, 0);
 
         $this->assertEquals([], $result->fetchAll());
-        $this->assertEquals(0, $result->getTotalCount());
-    }
-
-    public function testEmptyGenerator(): void
-    {
-        $emptyGenerator = static function () {
-            return;
-            yield; // Unreachable, but makes it a generator
-        };
-
-        $offsetResult = new OffsetResult($emptyGenerator());
-        $this->assertEquals([], $offsetResult->fetchAll());
-        $this->assertEquals(0, $offsetResult->getTotalCount());
-    }
-
-    public function testGeneratorWithEmptySourceResults(): void
-    {
-        $generator = static function () {
-            yield new ArraySourceResult([], 0);
-            yield new ArraySourceResult([], 0);
-        };
-
-        $offsetResult = new OffsetResult($generator());
-        $this->assertEquals([], $offsetResult->fetchAll());
-        $this->assertEquals(0, $offsetResult->getTotalCount());
-    }
-
-    public function testMultipleFetchCalls(): void
-    {
-        $sources = [
-            new ArraySourceResult(['a', 'b'], 4),
-            new ArraySourceResult(['c', 'd'], 4),
-        ];
-
-        $offsetResult = new OffsetResult($this->getGenerator($sources));
-
-        // First fetch
-        $this->assertEquals('a', $offsetResult->fetch());
-        $this->assertEquals('b', $offsetResult->fetch());
-        $this->assertEquals('c', $offsetResult->fetch());
-        $this->assertEquals('d', $offsetResult->fetch());
-
-        // No more items
-        $this->assertNull($offsetResult->fetch());
-        $this->assertNull($offsetResult->fetch()); // Multiple calls to exhausted generator
+        $this->assertEquals(0, $result->getFetchedCount());
     }
 
     public function testFetchAfterFetchAll(): void
     {
         $sources = [
-            new ArraySourceResult(['x', 'y'], 2),
+            $this->getGenerator(['x', 'y']),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
@@ -203,7 +163,7 @@ class OffsetResultTest extends TestCase
     public function testFetchAllAfterPartialFetch(): void
     {
         $sources = [
-            new ArraySourceResult(['p', 'q', 'r']),
+            $this->getGenerator(['p', 'q', 'r']),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
@@ -219,41 +179,143 @@ class OffsetResultTest extends TestCase
         $this->assertNull($offsetResult->fetch());
     }
 
-    public function testGeneratorYieldingNonObjects(): void
+    #[DataProvider('fetchedCountProvider')]
+    public function testFetchedCount(array $sources, array $expectedResult): void
     {
-        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
-        $this->expectExceptionMessage('Source result must be an instance of SomeWork\OffsetPage\SourceResultInterface, got string');
-
-        $generator = static function () {
-            yield 'not an object';
-        };
-
-        $offsetResult = new OffsetResult($generator());
-        $offsetResult->fetch(); // Trigger processing
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+        $this->assertEquals($expectedResult, $offsetResult->fetchAll());
     }
 
-    public function testGeneratorYieldingInvalidObjects(): void
+    public function testGeneratorMethodAfterFetchAll(): void
     {
-        $this->expectException(\SomeWork\OffsetPage\Exception\InvalidPaginationResultException::class);
-        $this->expectExceptionMessage('Source result must be an instance of SomeWork\OffsetPage\SourceResultInterface, got stdClass');
+        $data = ['p', 'q', 'r'];
+        $sources = [$this->getGenerator($data)];
 
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+
+        // Exhaust the result
+        $this->assertEquals($data, $offsetResult->fetchAll());
+
+        // Generator method returns the same consumed generator
+        $generator = $offsetResult->generator();
+
+        // Should throw exception when trying to iterate consumed generator
+        $this->expectException(\Exception::class);
+        iterator_to_array($generator);
+    }
+
+    public function testGeneratorMethodMultipleCalls(): void
+    {
+        $data = ['first', 'second'];
+        $sources = [$this->getGenerator($data)];
+
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+
+        // First generator call
+        $gen1 = $offsetResult->generator();
+        $result1 = iterator_to_array($gen1);
+        $this->assertEquals($data, $result1);
+
+        // Second generator call returns same consumed generator
+        $gen2 = $offsetResult->generator();
+
+        // Should throw exception when trying to iterate consumed generator
+        $this->expectException(\Exception::class);
+        iterator_to_array($gen2);
+    }
+
+    public function testGeneratorMethodReturnsGenerator(): void
+    {
+        $data = ['a', 'b', 'c'];
+        $sources = [$this->getGenerator($data)];
+
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+        $generator = $offsetResult->generator();
+
+        $this->assertEquals($data, iterator_to_array($generator));
+    }
+
+    public function testGeneratorMethodWithEmptyResult(): void
+    {
+        $emptyResult = OffsetResult::empty();
+        $generator = $emptyResult->generator();
+
+        $this->assertEquals([], iterator_to_array($generator));
+    }
+
+    public function testGeneratorMethodWithLargeData(): void
+    {
+        $largeData = range(1, 1000);
+        $sources = [$this->getGenerator($largeData)];
+
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+        $generator = $offsetResult->generator();
+
+        $result = iterator_to_array($generator);
+
+        $this->assertEquals($largeData, $result);
+        $this->assertCount(1000, $result);
+    }
+
+    public function testGeneratorMethodWithPartialConsumption(): void
+    {
+        $data = ['x', 'y', 'z'];
+        $sources = [$this->getGenerator($data)];
+
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+
+        // Get generator before consuming OffsetResult
+        $generator = $offsetResult->generator();
+
+        // Consume one item from generator first
+        $this->assertEquals('x', $generator->current());
+        $generator->next();
+
+        // Get remaining items
+        $remaining = [];
+        while ($generator->valid()) {
+            $remaining[] = $generator->current();
+            $generator->next();
+        }
+
+        $this->assertEquals(['y', 'z'], $remaining);
+    }
+
+    public function testGeneratorWithEmptySourceResults(): void
+    {
         $generator = static function () {
-            yield new \stdClass(); // Doesn't implement SourceResultInterface
+            yield (static fn () => yield from [])();
+            yield (static fn () => yield from [])();
         };
 
         $offsetResult = new OffsetResult($generator());
-        $offsetResult->fetch(); // Trigger processing
+        $this->assertEquals([], $offsetResult->fetchAll());
+        $this->assertEquals(0, $offsetResult->getFetchedCount());
+    }
+
+    public function testGeneratorWithMixedDataTypes(): void
+    {
+        $data = [1, 'string', 3.14, true];
+        $sources = [
+            $this->getGenerator($data),
+        ];
+
+        $offsetResult = new OffsetResult($this->getGenerator($sources));
+        $result = $offsetResult->fetchAll();
+
+        $this->assertEquals($data, $result);
+        $this->assertEquals(4, $offsetResult->getFetchedCount());
     }
 
     public function testLargeDatasetHandling(): void
     {
         $largeData = range(1, 1000);
         $sources = [
-            new ArraySourceResult($largeData),
+            $this->getGenerator($largeData),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $this->assertEquals(0, $offsetResult->getTotalCount());
+        $this->assertEquals(0, $offsetResult->getFetchedCount());
 
         $allResults = $offsetResult->fetchAll();
         $this->assertCount(1000, $allResults);
@@ -264,8 +326,8 @@ class OffsetResultTest extends TestCase
     {
         // Test that we don't load all data into memory at once
         $sources = [
-            new ArraySourceResult(range(1, 100), 100),
-            new ArraySourceResult(range(101, 200), 200),
+            $this->getGenerator(range(1, 100)),
+            $this->getGenerator(range(101, 200)),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
@@ -290,75 +352,30 @@ class OffsetResultTest extends TestCase
         $this->assertEquals(200, $count);
     }
 
-    public function testGeneratorWithMixedDataTypes(): void
+    public function testMultipleFetchCalls(): void
     {
         $sources = [
-            new ArraySourceResult([1, 'string', 3.14, true], 4),
+            $this->getGenerator(['a']),
+            $this->getGenerator(['b']),
+            $this->getGenerator(['c']),
+            $this->getGenerator(['d']),
         ];
 
         $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $result = $offsetResult->fetchAll();
 
-        $this->assertEquals([1, 'string', 3.14, true], $result);
-        $this->assertEquals(4, $offsetResult->getTotalCount());
+        // First fetch
+        $this->assertEquals('a', $offsetResult->fetch());
+        $this->assertEquals('b', $offsetResult->fetch());
+        $this->assertEquals('c', $offsetResult->fetch());
+        $this->assertEquals('d', $offsetResult->fetch());
+
+        // No more items
+        $this->assertNull($offsetResult->fetch());
+        $this->assertNull($offsetResult->fetch()); // Multiple calls to exhausted generator
     }
 
-    public function testEmptySourceResultInMiddleOfGenerator(): void
+    protected function getGenerator(array $value): \Generator
     {
-        $sources = [
-            new ArraySourceResult(['first'], 1),
-            new ArraySourceResult([], 0), // Empty result
-            new ArraySourceResult(['second', 'third'], 2),
-        ];
-
-        $offsetResult = new OffsetResult($this->getGenerator($sources));
-        $this->assertEquals(['first', 'second', 'third'], $offsetResult->fetchAll());
-        $this->assertEquals(3, $offsetResult->getTotalCount());
-    }
-
-    #[DataProvider('complexFetchScenariosProvider')]
-    public function testComplexFetchScenarios(array $sources, array $expectedResults, int $expectedTotalCount): void
-    {
-        $offsetResult = new OffsetResult($this->getGenerator($sources));
-
-        $this->assertEquals($expectedResults, $offsetResult->fetchAll());
-        $this->assertEquals($expectedTotalCount, $offsetResult->getTotalCount());
-    }
-
-    public static function complexFetchScenariosProvider(): array
-    {
-        return [
-            'single_source_single_item' => [
-                [new ArraySourceResult(['item'], 1)],
-                ['item'],
-                1,
-            ],
-            'multiple_sources_same_count' => [
-                [
-                    new ArraySourceResult(['a1', 'a2'], 2),
-                    new ArraySourceResult(['b1', 'b2'], 2),
-                ],
-                ['a1', 'a2', 'b1', 'b2'],
-                4,
-            ],
-            'empty_sources_mixed_with_data' => [
-                [
-                    new ArraySourceResult([], 0),
-                    new ArraySourceResult(['data'], 1),
-                    new ArraySourceResult([], 0),
-                ],
-                ['data'],
-                1,
-            ],
-            'increasing_total_counts' => [
-                [
-                    new ArraySourceResult(['x'], 1),
-                    new ArraySourceResult(['y', 'z'], 2),
-                    new ArraySourceResult(['a', 'b', 'c'], 3),
-                ],
-                ['x', 'y', 'z', 'a', 'b', 'c'],
-                6,
-            ],
-        ];
+        yield from $value;
     }
 }

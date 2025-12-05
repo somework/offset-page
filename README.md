@@ -7,7 +7,8 @@
 
 **Offset source adapter for PHP 8.2+**
 
-This library provides an adapter to fetch items from data sources that only support page-based pagination, converting offset-based requests to page-based requests internally.
+This library provides an adapter to fetch items from data sources that only support page-based pagination, converting
+offset-based requests to page-based requests internally.
 
 ## Requirements
 
@@ -67,16 +68,22 @@ while (($item = $result->fetch()) !== null) {
 }
 
 // Get count of items that were actually fetched and yielded
-$fetchedCount = $result->getTotalCount(); // Returns count of items yielded by the result
+$fetchedCount = $result->getFetchedCount(); // Returns count of items yielded by the result
 ```
 
 ### Canonical adapter behavior
 
 - `offset`, `limit`, and `nowCount` must be non-negative. Negative values throw `InvalidArgumentException`.
-- `limit=0` is treated as a no-op **only** when `offset=0` and `nowCount=0`; otherwise it is rejected. This prevents accidental “fetch everything” or logic recursion loops.
-- The adapter stops iterating once it has yielded `limit` items (for `limit>0`), when the wrapped logic reports a non-positive page size, or when the source returns no items. This guards against infinite loops from odd logic mappings.
-- Offset smaller than limit is passed through to `somework/offset-page-logic` which may request smaller pages first; the adapter will keep iterating until the requested `limit` is satisfied or the source ends.
-- Offset greater than limit and not divisible by it is mapped via the logic library’s divisor search (e.g. `offset=47`, `limit=22` → page `48`, size `1`); the adapter caps the total items at the requested `limit` but preserves the logic mapping.
+- `limit=0` is treated as a no-op **only** when `offset=0` and `nowCount=0`; otherwise it is rejected. This prevents
+  accidental “fetch everything” or logic recursion loops.
+- The adapter stops iterating once it has yielded `limit` items (for `limit>0`), when the wrapped logic reports a
+  non-positive page size, or when the source returns no items. This guards against infinite loops from odd logic
+  mappings.
+- Offset smaller than limit is passed through to `somework/offset-page-logic` which may request smaller pages first; the
+  adapter will keep iterating until the requested `limit` is satisfied or the source ends.
+- Offset greater than limit and not divisible by it is mapped via the logic library’s divisor search (e.g. `offset=47`,
+  `limit=22` → page `48`, size `1`); the adapter caps the total items at the requested `limit` but preserves the logic
+  mapping.
 
 Example mapping:
 
@@ -152,13 +159,15 @@ $result = $adapter->execute(100, 25);
 
 ## How It Works
 
-This library uses [somework/offset-page-logic](https://github.com/somework/offset-page-logic) internally to convert offset-based requests to page-based requests. When you request items with an offset and limit, the library:
+This library uses [somework/offset-page-logic](https://github.com/somework/offset-page-logic) internally to convert
+offset-based requests to page-based requests. When you request items with an offset and limit, the library:
 
 1. Calculates which pages need to be fetched
 2. Calls your source for each required page
 3. Combines the results into a single offset-based result
 
-This is particularly useful when working with APIs or databases that only support page-based pagination but your application logic requires offset-based access.
+This is particularly useful when working with APIs or databases that only support page-based pagination but your
+application logic requires offset-based access.
 
 ## Development
 
@@ -177,6 +186,7 @@ composer quality        # Run static analysis and code style checks
 ### Testing
 
 The library includes comprehensive tests covering:
+
 - Unit tests for all core classes
 - Integration tests for real-world scenarios
 - Property-based tests for edge cases

@@ -12,7 +12,6 @@
 namespace SomeWork\OffsetPage\Tests;
 
 use SomeWork\OffsetPage\SourceInterface;
-use SomeWork\OffsetPage\SourceResultInterface;
 
 /**
  * @template T
@@ -29,18 +28,14 @@ class ArraySource implements SourceInterface
     }
 
     /**
-     * @return SourceResultInterface<T>
+     * @return \Generator<T>
      */
-    public function execute(int $page, int $pageSize): SourceResultInterface
+    public function execute(int $page, int $pageSize): \Generator
     {
         $page = max(1, $page);
 
-        $data = 0 < $pageSize ?
+        yield from  0 < $pageSize ?
             array_slice($this->data, ($page - 1) * $pageSize, $pageSize) :
             [];
-
-        return new ArraySourceResult(
-            $data,
-        );
     }
 }

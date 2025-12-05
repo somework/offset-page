@@ -22,16 +22,39 @@ namespace SomeWork\OffsetPage\Exception;
 class InvalidPaginationResultException extends \UnexpectedValueException implements PaginationExceptionInterface
 {
     /**
+     * Create an exception for invalid callback result type.
+     *
+     * @param mixed  $result The invalid result from callback
+     * @param string $expectedType The expected type
+     * @param string $context Additional context about where this occurred
+     *
+     * @return self
+     */
+    public static function forInvalidCallbackResult(mixed $result, string $expectedType, string $context = ''): self
+    {
+        $actualType = get_debug_type($result);
+        /** @noinspection SpellCheckingInspection */
+        $message = sprintf(
+            'Callback %smust return %s, got %s',
+            $context ? "($context) " : '',
+            $expectedType,
+            $actualType,
+        );
+
+        return new self($message);
+    }
+
+    /**
      * Create an exception for invalid source result type.
      *
-     * @param mixed $result The invalid result
+     * @param mixed  $result The invalid result
      * @param string $expectedType The expected type/class
      *
      * @return self
      */
     public static function forInvalidSourceResult(mixed $result, string $expectedType): self
     {
-        $actualType = is_object($result) ? get_class($result) : gettype($result);
+        $actualType = get_debug_type($result);
 
         return new self(
             sprintf(
@@ -40,27 +63,5 @@ class InvalidPaginationResultException extends \UnexpectedValueException impleme
                 $actualType,
             ),
         );
-    }
-
-    /**
-     * Create an exception for invalid callback result type.
-     *
-     * @param mixed $result The invalid result from callback
-     * @param string $expectedType The expected type
-     * @param string $context Additional context about where this occurred
-     *
-     * @return self
-     */
-    public static function forInvalidCallbackResult(mixed $result, string $expectedType, string $context = ''): self
-    {
-        $actualType = is_object($result) ? get_class($result) : gettype($result);
-        $message = sprintf(
-            'Callback %s must return %s, got %s',
-            $context ? "({$context}) " : '',
-            $expectedType,
-            $actualType,
-        );
-
-        return new self($message);
     }
 }
