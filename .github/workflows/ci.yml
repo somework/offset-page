@@ -27,14 +27,14 @@ jobs:
                 run: composer test -- --coverage-clover=build/logs/clover.xml
 
             -   name: Upload test results
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v5
                 if: always()
                 with:
                     name: test-results-php${{ matrix.php-version }}
                     path: build/logs/junit.xml
 
             -   name: Upload coverage reports
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v5
                 if: success()
                 with:
                     name: coverage-reports-php${{ matrix.php-version }}
