@@ -315,4 +315,56 @@ class OffsetAdapterTest extends TestCase
         $this->assertSame([], $result->fetchAll());
         $this->assertSame(0, $result->getFetchedCount());
     }
+
+    public function testFromCallbackCreatesAdapterWithCallbackSource(): void
+    {
+        $data = ['apple', 'banana', 'cherry', 'date', 'elderberry'];
+        $callCount = 0;
+
+        $adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) use ($data, &$callCount) {
+            $callCount++;
+            $startIndex = ($page - 1) * $pageSize;
+
+            if ($startIndex >= count($data)) {
+                yield from [];
+                return;
+            }
+
+            $items = array_slice($data, $startIndex, $pageSize);
+            yield from $items;
+        });
+
+        // Test that the adapter works correctly - request first 3 items
+        $result = $adapter->execute(0, 3);
+        $items = $result->fetchAll();
+
+        $this->assertSame(['apple', 'banana', 'cherry'], $items);
+        $this->assertSame(3, $result->getFetchedCount());
+        $this->assertSame(1, $callCount); // Callback should be called once for page 1
+
+        // Reset call count for next test
+        $callCount = 0;
+
+        // Test pagination works - request next 2 items
+        $result2 = $adapter->execute(3, 2);
+        $items2 = $result2->fetchAll();
+
+        $this->assertSame(['date', 'elderberry'], $items2);
+        $this->assertSame(2, $result2->getFetchedCount());
+        // Note: pagination logic may call callback multiple times to satisfy the request
+        $this->assertGreaterThanOrEqual(1, $callCount);
+    }
+
+    public function testFromCallbackWithEmptyData(): void
+    {
+        $adapter = OffsetAdapter::fromCallback(function (int $page, int $pageSize) {
+            yield from []; // Always return empty
+        });
+
+        $result = $adapter->execute(0, 10);
+        $items = $result->fetchAll();
+
+        $this->assertSame([], $items);
+        $this->assertSame(0, $result->getFetchedCount());
+    }
 }
