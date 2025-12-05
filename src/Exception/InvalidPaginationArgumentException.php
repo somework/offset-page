@@ -104,7 +104,9 @@ class InvalidPaginationArgumentException extends \InvalidArgumentException imple
      */
     public function getParameter(string $name): mixed
     {
-        return $this->parameters[$name] ?? null;
+        return array_key_exists($name, $this->parameters)
+            ? $this->parameters[$name]
+            : null;
     }
 
     /**

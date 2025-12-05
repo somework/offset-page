@@ -189,8 +189,13 @@ class IntegrationTest extends TestCase
         $allResults = [];
         $offset = 0;
         $limit = 10;
+        $maxIterations = 100; // Safety guard against infinite loops
+        $iterations = 0;
 
         while (true) {
+            if (++$iterations > $maxIterations) {
+                $this->fail('Exceeded maximum iterations - potential infinite loop');
+            }
             $result = $adapter->execute($offset, $limit);
             $batch = $result->fetchAll();
 
@@ -301,7 +306,9 @@ class IntegrationTest extends TestCase
         $adapter = new OffsetAdapter($source);
 
         // Test with different nowCount values
+        // Without nowCount, fetches full limit (5 items)
         $result1 = $adapter->execute(0, 5);
+        // With nowCount=2, only fetches remaining items up to limit (5-2=3 items)
         $result2 = $adapter->execute(0, 5, 2);
 
         $result1->fetchAll();
@@ -352,7 +359,8 @@ class IntegrationTest extends TestCase
             $startIndex = ($page - 1) * $size;
 
             if ($startIndex >= $totalItems) {
-                // Return empty generator
+                // Return empty generator explicitly
+                yield from [];
                 return;
             }
 

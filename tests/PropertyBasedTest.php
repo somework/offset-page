@@ -47,7 +47,7 @@ class PropertyBasedTest extends TestCase
     public function testExceptionPropagation(): void
     {
         // Test that exceptions in callbacks are properly propagated
-        $source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
+        $source = new SourceCallbackAdapter(function (int $_page, int $_pageSize) {
             throw new \DomainException('Domain error');
         });
 
@@ -97,7 +97,7 @@ class PropertyBasedTest extends TestCase
 
         foreach ($invalidReturns as $invalidReturn) {
             $source = new SourceCallbackAdapter(
-                fn (int $page, int $pageSize) => $invalidReturn,
+                fn (int $_page, int $_pageSize) => $invalidReturn,
             );
 
             $exceptionThrown = false;

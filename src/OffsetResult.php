@@ -79,6 +79,11 @@ class OffsetResult
     }
 
     /**
+     * Returns the internal generator for advanced use cases.
+     *
+     * Warning: The generator can only be consumed once. After calling
+     * fetch(), fetchAll(), or iterating this generator, it will be exhausted.
+     *
      * @return \Generator<T>
      */
     public function generator(): \Generator

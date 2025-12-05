@@ -17,7 +17,7 @@ Version 3.0 introduces several breaking changes for improved architecture:
    $count = $result->getFetchedCount();
    ```
 
-2. **Interface Removed**: `SourceResultInterface` and `SourceResultCallbackAdapter` are removed
+2. **Types Removed**: `SourceResultInterface` (interface) and `SourceResultCallbackAdapter` (class) are removed
    ```php
    // Before
    public function execute(int $page, int $pageSize): SourceResultInterface

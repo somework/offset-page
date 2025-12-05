@@ -28,8 +28,9 @@ class OffsetAdapterTest extends TestCase
         $result = $adapter->execute(0, 3, 2);
 
         // Should work with positive nowCount
-        $this->assertIsArray($result->fetchAll());
-        $this->assertSame(1, $result->getFetchedCount()); // Only 1 item should be returned due to nowCount=2
+        $items = $result->fetchAll();
+        $this->assertSame([3], $items); // With limit=3 and nowCount=2, only 1 more item needed
+        $this->assertSame(1, $result->getFetchedCount());
     }
 
     public function testAcceptsValidPositiveValues(): void

@@ -34,8 +34,8 @@ class ArraySource implements SourceInterface
     {
         $page = max(1, $page);
 
-        yield from  0 < $pageSize ?
-            array_slice($this->data, ($page - 1) * $pageSize, $pageSize) :
-            [];
+        if (0 < $pageSize) {
+            yield from array_slice($this->data, ($page - 1) * $pageSize, $pageSize);
+        }
     }
 }

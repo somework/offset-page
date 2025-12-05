@@ -129,9 +129,9 @@ class OffsetResultTest extends TestCase
     }
 
     /**
-     * Infinite fetch.
+     * Zero limit returns empty result when offset and nowCount are also zero.
      */
-    public function testError(): void
+    public function testZeroLimitReturnsEmptyResult(): void
     {
         $callback = function () {
             yield 1;
@@ -201,6 +201,7 @@ class OffsetResultTest extends TestCase
 
         // Should throw exception when trying to iterate consumed generator
         $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Cannot traverse an already closed generator');
         iterator_to_array($generator);
     }
 
