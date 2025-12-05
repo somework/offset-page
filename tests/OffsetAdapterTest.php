@@ -327,6 +327,7 @@ class OffsetAdapterTest extends TestCase
 
             if ($startIndex >= count($data)) {
                 yield from [];
+
                 return;
             }
 
