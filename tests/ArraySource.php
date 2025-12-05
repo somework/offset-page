@@ -30,12 +30,13 @@ class ArraySource implements SourceInterface
     }
 
     /**
-         * Provides the items for a specific page from the internal array.
-         *
-         * @param int $page Page number; values less than 1 are treated as 1.
-         * @param int $pageSize Number of items per page; if less than or equal to 0 no items are yielded.
-         * @return \Generator<T> A generator that yields the items for the requested page.
-         */
+     * Provides the items for a specific page from the internal array.
+     *
+     * @param int $page     Page number; values less than 1 are treated as 1.
+     * @param int $pageSize Number of items per page; if less than or equal to 0 no items are yielded.
+     *
+     * @return \Generator<T> A generator that yields the items for the requested page.
+     */
     public function execute(int $page, int $pageSize): \Generator
     {
         $page = max(1, $page);

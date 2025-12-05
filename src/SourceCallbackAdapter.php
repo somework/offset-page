@@ -44,6 +44,7 @@ class SourceCallbackAdapter implements SourceInterface
      * Calls the adapter's callback with the provided page and page size and returns the resulting Generator.
      *
      * @throws InvalidPaginationResultException If the callback does not return a `\Generator`.
+     *
      * @return \Generator<T> A Generator that yields page results of type `T`.
      */
     public function execute(int $page, int $pageSize): \Generator
