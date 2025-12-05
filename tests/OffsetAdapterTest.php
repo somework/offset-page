@@ -367,4 +367,52 @@ class OffsetAdapterTest extends TestCase
         $this->assertSame([], $items);
         $this->assertSame(0, $result->getFetchedCount());
     }
+
+
+    public function testExecuteHandlesSourceReturningEmptyGenerator(): void
+    {
+        // Create a source that returns an empty generator immediately
+        $source = new SourceCallbackAdapter(function (int $page, int $pageSize) {
+            // Return an empty generator (never yields anything)
+            return;
+            yield; // This line is never reached
+        });
+
+        $adapter = new OffsetAdapter($source);
+        $result = $adapter->execute(0, 5);
+
+        $items = $result->fetchAll();
+        $this->assertSame([], $items);
+        $this->assertSame(0, $result->getFetchedCount());
+    }
+
+    public function testGeneratorMethodWithEdgeCaseParameters(): void
+    {
+        $data = ['test'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        // Test generator method with parameters that might trigger edge cases
+        $generator = $adapter->generator(0, 1);
+        $items = iterator_to_array($generator);
+
+        $this->assertSame(['test'], $items);
+    }
+
+    public function testAllMethodsExecutedThroughDifferentPaths(): void
+    {
+        $data = ['item1', 'item2', 'item3'];
+        $adapter = new OffsetAdapter(new ArraySource($data));
+
+        // Test execute method (covers logic, assertArgumentsAreValid, createLimitedGenerator, shouldContinuePagination)
+        $result1 = $adapter->execute(0, 2);
+        $this->assertSame(['item1', 'item2'], $result1->fetchAll());
+
+        // Test generator method (covers same internal methods)
+        $generator = $adapter->generator(1, 2);
+        $this->assertSame(['item2', 'item3'], iterator_to_array($generator));
+
+        // Test fetchAll method (covers same internal methods)
+        $items = $adapter->fetchAll(2, 1);
+        $this->assertSame(['item3'], $items);
+    }
 }
