@@ -16,6 +16,13 @@ namespace SomeWork\OffsetPage;
 use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
 
 /**
+ * Convenience adapter for callback-based data sources.
+ *
+ * Use this when you want to provide data via a simple callback function
+ * instead of implementing the SourceInterface directly.
+ *
+ * Your callback receives (page, pageSize) parameters and should return a Generator.
+ *
  * @template T
  *
  * @implements SourceInterface<T>

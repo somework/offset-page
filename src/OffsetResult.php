@@ -16,6 +16,14 @@ namespace SomeWork\OffsetPage;
 use SomeWork\OffsetPage\Exception\InvalidPaginationResultException;
 
 /**
+ * Result of an offset-based pagination request.
+ *
+ * Provides multiple ways to access the paginated data:
+ * - fetchAll(): Get all results as an array
+ * - fetch(): Iterate through results one by one
+ * - generator(): Get a generator for advanced use cases
+ * - getFetchedCount(): Get the number of items returned
+ *
  * @template T
  */
 class OffsetResult

@@ -18,15 +18,37 @@ use SomeWork\OffsetPage\Logic\AlreadyGetNeededCountException;
 use SomeWork\OffsetPage\Logic\Offset;
 
 /**
+ * Offset-based pagination adapter for page-based data sources.
+ *
+ * This adapter converts offset-based pagination requests (like "give me items 50-99")
+ * into page-based requests that your data source can understand.
+ *
  * @template T
  */
 readonly class OffsetAdapter
 {
     /**
+     * Create an adapter with a custom source implementation.
+     *
      * @param SourceInterface<T> $source
      */
     public function __construct(protected SourceInterface $source)
     {
+    }
+
+    /**
+     * Create an adapter using a callback function.
+     *
+     * This is the most convenient way to use the adapter for simple cases.
+     * Your callback will receive (page, pageSize) and should return a Generator.
+     *
+     * @param callable(int, int): \Generator<T> $callback
+     *
+     * @return self<T>
+     */
+    public static function fromCallback(callable $callback): self
+    {
+        return new self(new SourceCallbackAdapter($callback));
     }
 
     /**
@@ -55,6 +77,10 @@ readonly class OffsetAdapter
     }
 
     /**
+     * Get results as a generator (advanced usage).
+     *
+     * For most use cases, use execute() instead and call fetchAll() on the result.
+     *
      * @param int $offset
      * @param int $limit
      * @param int $nowCount
@@ -66,6 +92,24 @@ readonly class OffsetAdapter
     public function generator(int $offset, int $limit, int $nowCount = 0): \Generator
     {
         return $this->execute($offset, $limit, $nowCount)->generator();
+    }
+
+    /**
+     * Execute pagination and return all results as an array.
+     *
+     * This is a convenience method for the most common use case.
+     *
+     * @param int $offset
+     * @param int $limit
+     * @param int $nowCount
+     *
+     * @return array<T>
+     *
+     * @throws \Throwable
+     */
+    public function fetchAll(int $offset, int $limit, int $nowCount = 0): array
+    {
+        return $this->execute($offset, $limit, $nowCount)->fetchAll();
     }
 
     /**

@@ -22,8 +22,23 @@ jobs:
                 with:
                     php-version: ${{ matrix.php-version }}
 
-            -   name: Run tests
-                run: composer test
+            -   name: Run tests with coverage
+                run: composer test -- --coverage-clover=build/logs/clover.xml
+
+            -   name: Upload test results
+                uses: actions/upload-artifact@v4
+                if: always()
+                with:
+                    name: test-results-php${{ matrix.php-version }}
+                    path: build/logs/junit.xml
+
+            -   name: Upload coverage reports
+                uses: actions/upload-artifact@v4
+                with:
+                    name: coverage-reports-php${{ matrix.php-version }}
+                    path: |
+                        build/logs/clover.xml
+                        build/coverage/
 
     quality:
         needs: tests
